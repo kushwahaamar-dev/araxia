@@ -1,0 +1,53 @@
+{
+  "device": {
+    "name": "Google Fitbit Air",
+    "model": "67",
+    "firmware": "67.20001.253.2",
+    "transport": "BLE, Heart Rate Service 0x180D, characteristic 0x2A37 notify"
+  },
+  "measured_from": ["capture/hr_worn_4.jsonl", "capture/hr_offwrist.jsonl", "capture/hr_rewear.jsonl"],
+  "packet": {
+    "flags_observed": ["0x01"],
+    "bpm_width_bits": 16,
+    "notify_hz": 1.0,
+    "value_refresh_s": 2,
+    "median_gap_ms": 1019,
+    "max_gap_ms": 1055
+  },
+  "fields": {
+    "bpm": true,
+    "rr_intervals": false,
+    "skin_contact": "unsupported",
+    "energy_expended": false,
+    "battery_service": false,
+    "body_sensor_location": false
+  },
+  "behaviour": {
+    "requires_share_heart_rate_on": true,
+    "first_connection_needs_app_confirm": true,
+    "reconnect_streams_without_phone_s": 9,
+    "off_wrist_connected": "keeps sending last value at 1 Hz indefinitely",
+    "off_wrist_disconnected": "stops advertising",
+    "rewear_stale_carryover_s": 21,
+    "worn_max_identical_run_s": 21
+  },
+  "thresholds": {
+    "pause_after_s": 3.0,
+    "disconnect_after_s": 10.0,
+    "frozen_stale_s": 30.0,
+    "ready_window_s": 30.0,
+    "min_distinct_values": 2,
+    "bpm_plausible": [30, 220]
+  },
+  "claims_allowed": [
+    "presence-conditioned issuance and execution",
+    "off-wrist detection by frozen-value analysis",
+    "per-wearer volatility model that can only force step-up"
+  ],
+  "claims_forbidden": [
+    "identification of a person among many from heart rate",
+    "HRV or RR-interval features",
+    "skin-contact sensing",
+    "sensor provenance authenticated by Fitbit"
+  ]
+}
