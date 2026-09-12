@@ -14,7 +14,7 @@ from pathlib import Path
 from bleak import BleakScanner
 
 FITBIT_HINTS = re.compile(
-    r"fitbit|google.?health|charge|versa|inspire|sense|luxe|ace|aria|air",
+    r"fitbit|google.?health|charge|versa|inspire|sense|luxe|ace|aria|\bair\b",
     re.I,
 )
 
@@ -94,7 +94,9 @@ def main() -> int:
     print(f"Found {len(devices)} device(s). Wrote {args.out}")
     for d in devices:
         tag = " [FITBIT?]" if d["fitbit_candidate"] else ""
-        print(f"  {d['rssi']:>4}  {d['address']}  {d['name'] or '(no name)'}{tag}")
+        svcs = ",".join(u[4:8] if u.endswith("-0000-1000-8000-00805f9b34fb") else u for u in d["service_uuids"])
+        svc_txt = f"  svc={svcs}" if svcs else ""
+        print(f"  {d['rssi']:>4}  {d['address']}  {d['name'] or '(no name)'}{tag}{svc_txt}")
     return 0
 
 

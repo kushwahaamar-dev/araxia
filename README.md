@@ -15,7 +15,10 @@ git clone --recurse-submodules https://github.com/kushwahaamar-dev/araxia.git
 | `scripts/scan_ble.py` | Scan nearby BLE; flag Fitbit-like ads |
 | `scripts/dump_gatt.py` | Connect + dump GATT tree → `dump.txt` |
 | `scripts/sniff_notify.py` | Subscribe to notify/indicate and log payloads |
-| `capture/` | Scan/GATT JSON + Android HCI snoop notes |
+| `scripts/wait_for_hr.py` | Block until a device advertises Heart Rate Service `0x180D` |
+| `scripts/hr_stream.py` | Decode live `0x2A37` heart-rate packets to JSONL with summary stats |
+| `capture/hardware_gate.md` | Measured facts: what the Air exposes, off-wrist behaviour, thresholds |
+| `capture/` | Scan/GATT JSON, HR captures, Android HCI snoop notes |
 | `vendor/fitness-app` | SEEMOO Fitbit Android RE (older models) |
 | `vendor/BreakMi` | BLE fitness toolkit (Mi Band + some Fitbit Charge 2) |
 
@@ -43,6 +46,11 @@ python scripts/dump_gatt.py <ADDRESS> --read
 
 # 3) Live notify sniff while you move / wait for HR updates
 python scripts/sniff_notify.py <ADDRESS> --seconds 45
+
+# 4) Live heart rate. In Google Health: Connections -> Fitbit Air -> Share heart rate ON.
+#    First connection only: tap "Get started" / confirm in the app while connected.
+python scripts/wait_for_hr.py            # prints the address once 0x180D is advertised
+python scripts/hr_stream.py <ADDRESS> --label worn --seconds 120
 ```
 
 Outputs:

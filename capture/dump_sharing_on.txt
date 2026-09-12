@@ -1,0 +1,77 @@
+# GATT dump 2026-09-12T23:27:32.387466+00:00
+# address=2B2621E5-CB63-8A8F-3A0B-7EAF138387D0 mtu=247
+
+SERVICE  0000180a-0000-1000-8000-00805f9b34fb  Device Information
+  CHAR   00002a29-0000-1000-8000-00805f9b34fb  [read]  Manufacturer Name String
+         value_hex=466974626974
+         value_utf8='Fitbit'
+  CHAR   00002a24-0000-1000-8000-00805f9b34fb  [read]  Model Number String
+         value_hex=3637
+         value_utf8='67'
+  CHAR   00002a25-0000-1000-8000-00805f9b34fb  [read]  Serial Number String
+         value_hex=653832646665393332333466
+         value_utf8='e82dfe93234f'
+  CHAR   00002a27-0000-1000-8000-00805f9b34fb  [read]  Hardware Revision String
+         value_hex=
+         value_utf8=''
+  CHAR   00002a26-0000-1000-8000-00805f9b34fb  [read]  Firmware Revision String
+         value_hex=36372e32303030312e3235332e32
+         value_utf8='67.20001.253.2'
+  CHAR   00002a28-0000-1000-8000-00805f9b34fb  [read]  Software Revision String
+         value_hex=
+         value_utf8=''
+  CHAR   00002a23-0000-1000-8000-00805f9b34fb  [read]  System ID
+         value_hex=0000000000000000
+         value_utf8='\x00\x00\x00\x00\x00\x00\x00\x00'
+  CHAR   00002a2a-0000-1000-8000-00805f9b34fb  [read]  IEEE 11073-20601 Regulatory Cert. Data List
+         value_hex=00
+         value_utf8='\x00'
+  CHAR   00002a50-0000-1000-8000-00805f9b34fb  [read]  PnP ID
+         value_hex=00000000000000
+         value_utf8='\x00\x00\x00\x00\x00\x00\x00'
+
+SERVICE  abbafd00-e56a-484c-b832-8b17cf6cbfe8  Unknown
+  CHAR   abbafd01-e56a-484c-b832-8b17cf6cbfe8  [read,notify]  Unknown
+         value_hex=180000004800f70000
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=51
+  CHAR   abbafd02-e56a-484c-b832-8b17cf6cbfe8  [read,notify]  Unknown
+         value_hex=03000000000000
+         value_utf8='\x03\x00\x00\x00\x00\x00\x00'
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=54
+  CHAR   abbafd03-e56a-484c-b832-8b17cf6cbfe8  [read]  Unknown
+         value_hex=00
+         value_utf8='\x00'
+
+SERVICE  abbaff00-e56a-484c-b832-8b17cf6cbfe8  Unknown
+  CHAR   abbaff01-e56a-484c-b832-8b17cf6cbfe8  [write-without-response]  Unknown
+  CHAR   abbaff02-e56a-484c-b832-8b17cf6cbfe8  [notify]  Unknown
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=69
+
+SERVICE  ac2f0045-8182-4be5-91e0-2992e6b40ebb  Unknown
+  CHAR   ac2f0145-8182-4be5-91e0-2992e6b40ebb  [read]  Unknown
+         value_hex=ac2f284581824be591e02992e6b40ebb
+  CHAR   ac2f2845-8182-4be5-91e0-2992e6b40ebb  [write]  Unknown
+
+SERVICE  0000180d-0000-1000-8000-00805f9b34fb  Heart Rate
+  CHAR   00002a37-0000-1000-8000-00805f9b34fb  [notify]  Heart Rate Measurement
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=99
+
+SERVICE  4eee1c00-4133-479b-8663-02c84bdc14be  Unknown
+  CHAR   4eee1c01-4133-479b-8663-02c84bdc14be  [indicate,notify]  Unknown
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=115
+  CHAR   4eee1c02-4133-479b-8663-02c84bdc14be  [write,write-without-response]  Unknown
+  CHAR   4eee1c03-4133-479b-8663-02c84bdc14be  [read]  Unknown
+         read_error=(133, 'GATT Protocol Error: Application-specific Error 0x85')
+  CHAR   4eee1c04-4133-479b-8663-02c84bdc14be  [indicate]  Unknown
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=122
+  CHAR   4eee1c05-4133-479b-8663-02c84bdc14be  [notify]  Unknown
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=125
+  CHAR   4eee1c06-4133-479b-8663-02c84bdc14be  [read,write,notify]  Unknown
+         value_hex=00
+         value_utf8='\x00'
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=128
+  CHAR   4eee1c07-4133-479b-8663-02c84bdc14be  [read,write,indicate]  Unknown
+         value_hex=00
+         value_utf8='\x00'
+    DESC 00002902-0000-1000-8000-00805f9b34fb  handle=131
+
