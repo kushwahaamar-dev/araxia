@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bleak import BleakClient
@@ -61,17 +62,15 @@ async def dump(address: str, timeout: float, read_values: bool) -> dict:
                     try:
                         raw = await client.read_gatt_char(char)
                         entry["value_hex"] = raw.hex()
-                        try:
+                        with contextlib.suppress(UnicodeDecodeError):
                             entry["value_utf8"] = raw.decode("utf-8")
-                        except UnicodeDecodeError:
-                            pass
-                    except Exception as exc:  # noqa: BLE001 — surface per-char failures
+                    except Exception as exc:
                         entry["read_error"] = str(exc)
                 svc["characteristics"].append(entry)
             services.append(svc)
 
         return {
-            "dumped_at": datetime.now(timezone.utc).isoformat(),
+            "dumped_at": datetime.now(UTC).isoformat(),
             "address": address,
             "mtu": getattr(client, "mtu_size", None),
             "services": services,
@@ -121,7 +120,7 @@ def main() -> int:
 
     try:
         data = asyncio.run(dump(args.address, args.timeout, args.read))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Connect/dump failed: {exc}", file=sys.stderr)
         return 1
 

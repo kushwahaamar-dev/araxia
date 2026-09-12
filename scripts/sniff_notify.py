@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bleak import BleakClient
@@ -17,7 +18,7 @@ async def sniff(address: str, uuids: list[str], timeout: float, seconds: float, 
     lines: list[str] = []
 
     def handler(sender, data: bytearray):
-        ts = datetime.now(timezone.utc).isoformat()
+        ts = datetime.now(UTC).isoformat()
         line = f"{ts}  handle={sender}  hex={data.hex()}  len={len(data)}"
         print(line, flush=True)
         lines.append(line)
@@ -41,16 +42,14 @@ async def sniff(address: str, uuids: list[str], timeout: float, seconds: float, 
             try:
                 await client.start_notify(uuid, handler)
                 print(f"  notify ON  {uuid}")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"  notify FAIL {uuid}: {exc}", file=sys.stderr)
 
         await asyncio.sleep(seconds)
 
         for uuid in targets:
-            try:
+            with contextlib.suppress(Exception):
                 await client.stop_notify(uuid)
-            except Exception:
-                pass
 
     out.write_text("\n".join(lines) + ("\n" if lines else ""))
     print(f"Wrote {len(lines)} packet(s) to {out}")
@@ -68,7 +67,7 @@ def main() -> int:
 
     try:
         asyncio.run(sniff(args.address, args.uuid, args.timeout, args.seconds, args.out))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Sniff failed: {exc}", file=sys.stderr)
         return 1
     return 0

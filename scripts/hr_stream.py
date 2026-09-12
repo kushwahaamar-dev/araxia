@@ -9,45 +9,33 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
+import itertools
 import json
 import statistics
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bleak import BleakClient
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from bridge.hrs import DecodeError, decode
 
 HR_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb"
 BODY_SENSOR_LOCATION = "00002a38-0000-1000-8000-00805f9b34fb"
 BATTERY_LEVEL = "00002a19-0000-1000-8000-00805f9b34fb"
 
-CONTACT = {0: "unsupported", 1: "unsupported", 2: "no_contact", 3: "contact"}
 
-
-def decode_hr(data: bytes) -> dict:
-    flags = data[0]
-    pos = 1
-    if flags & 0x01:
-        bpm = int.from_bytes(data[pos:pos + 2], "little")
-        pos += 2
-    else:
-        bpm = data[pos]
-        pos += 1
-    out = {
-        "flags": flags,
-        "bpm": bpm,
-        "contact": CONTACT[(flags >> 1) & 0x03],
-    }
-    if flags & 0x08:
-        out["energy_kj"] = int.from_bytes(data[pos:pos + 2], "little")
-        pos += 2
-    if flags & 0x10:
-        rr = []
-        while pos + 1 < len(data):
-            rr.append(round(int.from_bytes(data[pos:pos + 2], "little") / 1024.0, 4))
-            pos += 2
-        out["rr_s"] = rr
+def decode_row(data: bytes) -> dict:
+    m = decode(data)
+    contact = {None: "unsupported", True: "contact", False: "no_contact"}[m.contact_detected]
+    out: dict = {"flags": m.flags, "bpm": m.bpm, "contact": contact}
+    if m.energy_kj is not None:
+        out["energy_kj"] = m.energy_kj
+    if m.rr_ms:
+        out["rr_ms"] = list(m.rr_ms)
     return out
 
 
@@ -63,35 +51,32 @@ async def stream(address: str, seconds: float, timeout: float, out: Path) -> int
 
     def handler(_sender, data: bytearray):
         now = time.monotonic() - t0
-        row = {"t": round(now, 3), "ts": datetime.now(timezone.utc).isoformat(), "hex": data.hex()}
+        row = {"t": round(now, 3), "ts": datetime.now(UTC).isoformat(), "hex": data.hex()}
         try:
-            row.update(decode_hr(bytes(data)))
-        except Exception as exc:  # noqa: BLE001
+            row.update(decode_row(bytes(data)))
+        except DecodeError as exc:
             row["decode_error"] = str(exc)
         rows.append(row)
-        rr = row.get("rr_s")
-        rr_txt = f" rr={rr}" if rr else ""
-        print(f"[{now:7.2f}s] bpm={row.get('bpm')} contact={row.get('contact')}{rr_txt} hex={row['hex']}", flush=True)
+        rr = row.get("rr_ms")
+        rr_txt = f" rr_ms={rr}" if rr else ""
+        line = f"[{now:7.2f}s] bpm={row.get('bpm')} contact={row.get('contact')}{rr_txt} hex={row['hex']}"
+        print(line, flush=True)
 
     async with BleakClient(address, timeout=timeout, disconnected_callback=on_disconnect) as client:
         for uuid, label in ((BODY_SENSOR_LOCATION, "body_sensor_location"), (BATTERY_LEVEL, "battery")):
             try:
                 val = await client.read_gatt_char(uuid)
                 print(f"{label}: {val.hex()} ({int(val[0]) if val else None})")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 print(f"{label}: read failed: {exc}")
 
         await client.start_notify(HR_MEASUREMENT, handler)
         print(f"Subscribed to 2A37 for {seconds:.0f}s. Streaming...", flush=True)
-        try:
+        with contextlib.suppress(TimeoutError):
             await asyncio.wait_for(disconnected.wait(), timeout=seconds)
-        except asyncio.TimeoutError:
-            pass
         if client.is_connected:
-            try:
+            with contextlib.suppress(Exception):
                 await client.stop_notify(HR_MEASUREMENT)
-            except Exception:  # noqa: BLE001
-                pass
 
     with out.open("w") as fh:
         for row in rows:
@@ -99,17 +84,17 @@ async def stream(address: str, seconds: float, timeout: float, out: Path) -> int
 
     print(f"\nWrote {len(rows)} packet(s) to {out}")
     if len(rows) >= 2:
-        gaps = [b["t"] - a["t"] for a, b in zip(rows, rows[1:])]
+        gaps = [b["t"] - a["t"] for a, b in itertools.pairwise(rows)]
         bpms = [r["bpm"] for r in rows if "bpm" in r]
         contact = sum(1 for r in rows if r.get("contact") == "contact")
-        with_rr = sum(1 for r in rows if r.get("rr_s"))
-        rr_all = [x for r in rows for x in r.get("rr_s", [])]
+        with_rr = sum(1 for r in rows if r.get("rr_ms"))
+        rr_all = [x for r in rows for x in r.get("rr_ms", [])]
         print(f"cadence: median {statistics.median(gaps):.3f}s, max gap {max(gaps):.3f}s")
         print(f"bpm: min {min(bpms)} median {statistics.median(bpms)} max {max(bpms)}")
         print(f"contact bit: {contact}/{len(rows)} packets report skin contact")
         print(f"RR intervals: {with_rr}/{len(rows)} packets carry RR, {len(rr_all)} intervals total")
         if rr_all:
-            print(f"RR: min {min(rr_all):.3f}s median {statistics.median(rr_all):.3f}s max {max(rr_all):.3f}s")
+            print(f"RR ms: min {min(rr_all)} median {statistics.median(rr_all)} max {max(rr_all)}")
         flag_set = sorted({r.get("flags") for r in rows if "flags" in r})
         print(f"flag bytes seen: {[hex(f) for f in flag_set]}")
     return len(rows)
@@ -126,7 +111,7 @@ def main() -> int:
     out = root / "capture" / f"hr_{args.label}.jsonl"
     try:
         n = asyncio.run(stream(args.address, args.seconds, args.timeout, out))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"Stream failed: {exc}", file=sys.stderr)
         return 1
     return 0 if n else 2

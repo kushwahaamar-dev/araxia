@@ -8,7 +8,7 @@ import asyncio
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from bleak import BleakScanner
@@ -84,7 +84,7 @@ def main() -> int:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     payload = {
-        "scanned_at": datetime.now(timezone.utc).isoformat(),
+        "scanned_at": datetime.now(UTC).isoformat(),
         "duration_seconds": args.seconds,
         "count": len(devices),
         "devices": devices,
@@ -94,7 +94,9 @@ def main() -> int:
     print(f"Found {len(devices)} device(s). Wrote {args.out}")
     for d in devices:
         tag = " [FITBIT?]" if d["fitbit_candidate"] else ""
-        svcs = ",".join(u[4:8] if u.endswith("-0000-1000-8000-00805f9b34fb") else u for u in d["service_uuids"])
+        svcs = ",".join(
+            u[4:8] if u.endswith("-0000-1000-8000-00805f9b34fb") else u for u in d["service_uuids"]
+        )
         svc_txt = f"  svc={svcs}" if svcs else ""
         print(f"  {d['rssi']:>4}  {d['address']}  {d['name'] or '(no name)'}{tag}{svc_txt}")
     return 0

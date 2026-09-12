@@ -16,3 +16,7 @@ AGENTS.md
 # Local-only noise (keep intentional capture artifacts tracked)
 *.zip
 bugreport*/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
