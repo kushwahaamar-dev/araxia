@@ -1,0 +1,11 @@
+{
+  "name": "araxia",
+  "private": true,
+  "workspaces": ["packages/*", "web"],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm test --workspaces --if-present"
+  },
+  "engines": { "node": ">=20" }
+}
