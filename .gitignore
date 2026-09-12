@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# No Cursor / IDE agent trails
+.cursor/
+.cursorrules
+.claude/
+.agent/
+.agents/
+AGENTS.md
+*.code-workspace
+.idea/
+
+# Local-only noise (keep intentional capture artifacts tracked)
+*.zip
+bugreport*/

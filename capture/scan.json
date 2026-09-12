@@ -1,0 +1,934 @@
+{
+  "scanned_at": "2026-09-12T17:30:42.687018+00:00",
+  "duration_seconds": 15.0,
+  "count": 42,
+  "devices": [
+    {
+      "address": "2B2621E5-CB63-8A8F-3A0B-7EAF138387D0",
+      "name": "Google Fitbit Air",
+      "rssi": -57,
+      "fitbit_candidate": true,
+      "service_uuids": [
+        "0000180d-0000-1000-8000-00805f9b34fb"
+      ],
+      "manufacturer_data": {},
+      "tx_power": null
+    },
+    {
+      "address": "07661639-E9A6-5D20-6519-B56DC283BCB6",
+      "name": null,
+      "rssi": -43,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x0006": [
+          1,
+          9,
+          32,
+          34,
+          134,
+          184,
+          144,
+          106,
+          153,
+          80,
+          135,
+          225,
+          38,
+          60,
+          99,
+          89,
+          11,
+          23,
+          223,
+          27,
+          151,
+          236,
+          65,
+          100,
+          90,
+          185,
+          20
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "4248FBA4-7A5E-B1A6-2916-F575B046E531",
+      "name": "Amar\u2019s iPhone",
+      "rssi": -48,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          40,
+          31,
+          53,
+          72,
+          124,
+          157,
+          120
+        ]
+      },
+      "tx_power": 8
+    },
+    {
+      "address": "24E5768E-9566-EEBC-299E-1C3CCCF41749",
+      "name": null,
+      "rssi": -53,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          63,
+          31,
+          197,
+          222,
+          41,
+          32,
+          40
+        ]
+      },
+      "tx_power": 0
+    },
+    {
+      "address": "72DE7C6C-891A-3132-1C75-A4467DCC8639",
+      "name": null,
+      "rssi": -55,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          6,
+          65,
+          29,
+          223,
+          234,
+          16,
+          88
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "FA81A2C4-60D8-8CBD-B1D7-24DE756311D4",
+      "name": null,
+      "rssi": -55,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          22,
+          8,
+          0,
+          38,
+          40,
+          246,
+          108,
+          185,
+          232,
+          159
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "027BECBB-5DE2-B577-E00C-1A05541684AE",
+      "name": null,
+      "rssi": -57,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          0
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "827E9FE0-1956-CAEC-34D6-A40690886387",
+      "name": null,
+      "rssi": -57,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          6,
+          65,
+          29,
+          223,
+          234,
+          16,
+          88
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "499420A5-D9BD-6B81-16D7-BE39733A4072",
+      "name": null,
+      "rssi": -62,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          6,
+          22,
+          29,
+          202,
+          248,
+          30,
+          8
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "8DDE2C15-FE15-8C1B-D21C-5065E9F64D0B",
+      "name": null,
+      "rssi": -62,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          3
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "A1B5ABF6-E44F-7C3D-F264-EED460EE4B5D",
+      "name": null,
+      "rssi": -62,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {},
+      "tx_power": null
+    },
+    {
+      "address": "F8144CBD-651B-5DEE-DA96-CDCBD82676BA",
+      "name": null,
+      "rssi": -62,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          60,
+          31,
+          33,
+          110,
+          248,
+          222,
+          88
+        ]
+      },
+      "tx_power": 0
+    },
+    {
+      "address": "7A69988A-1CF7-0113-069C-7AC591104BD9",
+      "name": null,
+      "rssi": -63,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          52,
+          31,
+          131,
+          98,
+          169,
+          81,
+          24
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "04EF05DC-A5A3-429B-1BEB-F3B019A6E70D",
+      "name": null,
+      "rssi": -65,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x0075": [
+          1,
+          0,
+          2,
+          0,
+          1,
+          3,
+          255,
+          0,
+          0,
+          67,
+          0,
+          0,
+          36
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "3AF8D3F1-DA54-6922-8E74-F841876D7DCD",
+      "name": null,
+      "rssi": -66,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          6,
+          58,
+          30,
+          142,
+          13,
+          55,
+          251
+        ]
+      },
+      "tx_power": 7
+    },
+    {
+      "address": "AF63BDAC-D14E-5AEB-C7E6-98A3E696AFFC",
+      "name": null,
+      "rssi": -68,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          25,
+          170,
+          251,
+          71,
+          100,
+          36,
+          211,
+          71,
+          227,
+          40,
+          11,
+          170,
+          243,
+          2,
+          73,
+          69,
+          12,
+          230,
+          183,
+          185,
+          120,
+          127,
+          197,
+          200,
+          0,
+          151
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "3E031F96-CFC2-4B3F-6462-A08D1999817E",
+      "name": null,
+      "rssi": -69,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          238,
+          3,
+          7,
+          17,
+          6,
+          77,
+          185,
+          216,
+          116,
+          222,
+          140,
+          3,
+          166,
+          122,
+          188,
+          178,
+          134,
+          114,
+          76,
+          133,
+          52
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "5E896E40-F11A-39C1-17CF-53CFE7449FBC",
+      "name": null,
+      "rssi": -76,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          5,
+          54,
+          28,
+          254,
+          189,
+          107
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "801D4F80-047E-BA92-3DBD-25E7BD843720",
+      "name": "4",
+      "rssi": -76,
+      "fitbit_candidate": false,
+      "service_uuids": [
+        "3e1d50cd-7e3e-427d-8e1c-b78aa87fe624"
+      ],
+      "manufacturer_data": {},
+      "tx_power": 12
+    },
+    {
+      "address": "7C7BBC52-117F-6CEE-1987-95A93ADA1CE2",
+      "name": null,
+      "rssi": -81,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          2
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "21A92069-2F18-73E1-C59B-7A9D7BB89CE5",
+      "name": null,
+      "rssi": -83,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          2
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "72C82DAB-D99F-A719-B26E-FD53873A0DC5",
+      "name": null,
+      "rssi": -83,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          60,
+          31,
+          6,
+          4,
+          244,
+          147,
+          8
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "5AF4F52D-D198-CD12-87FA-C56995A0F200",
+      "name": null,
+      "rssi": -84,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          174,
+          3,
+          7,
+          17,
+          6,
+          254,
+          90,
+          225,
+          95,
+          224,
+          242,
+          210,
+          191,
+          23,
+          94,
+          97,
+          66,
+          120,
+          123,
+          51,
+          176
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "0324C5E1-A884-A4BB-5AE8-4EC93108EFE1",
+      "name": null,
+      "rssi": -85,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          22,
+          8,
+          0,
+          240,
+          219,
+          198,
+          54,
+          176,
+          56,
+          125
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "1C77FB59-5270-B9AB-5AD8-8E13FC6361FF",
+      "name": null,
+      "rssi": -85,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          1
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "CE6ED77F-DDDE-9C13-2CD7-51669429CFCA",
+      "name": null,
+      "rssi": -85,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          0
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "A5AE8D4E-6DF0-B8CA-96FD-D3FA7E014D3D",
+      "name": null,
+      "rssi": -86,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          124,
+          31,
+          159,
+          92,
+          129,
+          81,
+          56
+        ]
+      },
+      "tx_power": 16
+    },
+    {
+      "address": "1107E201-0D6D-9383-DE4A-BFEE0620C33D",
+      "name": null,
+      "rssi": -87,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          5,
+          33,
+          24,
+          255,
+          129,
+          169
+        ]
+      },
+      "tx_power": 0
+    },
+    {
+      "address": "5C998F8F-CC9F-B3DF-2772-C3C65FFFAB27",
+      "name": null,
+      "rssi": -87,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          2
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "832F2EBD-5520-DDD9-F549-09B6FDDEC230",
+      "name": null,
+      "rssi": -87,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          15,
+          5,
+          144,
+          0,
+          176,
+          111,
+          190,
+          16,
+          2,
+          15,
+          4
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "8CAAE22F-58C2-C9B8-1834-D404CE722328",
+      "name": null,
+      "rssi": -89,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          12,
+          14,
+          0,
+          50,
+          21,
+          47,
+          209,
+          186,
+          46,
+          39,
+          36,
+          35,
+          235,
+          167,
+          184,
+          64,
+          16,
+          6,
+          118,
+          29,
+          21,
+          93,
+          80,
+          40
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "CCD62EE5-9A3A-74A3-A70B-1700CC06AC03",
+      "name": null,
+      "rssi": -90,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          7,
+          63,
+          31,
+          114,
+          15,
+          83,
+          222,
+          56
+        ]
+      },
+      "tx_power": 12
+    },
+    {
+      "address": "7FB7607F-6D48-9C82-4AA5-222907EA0DE3",
+      "name": null,
+      "rssi": -91,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          19,
+          7,
+          2,
+          109,
+          67,
+          211,
+          48,
+          52,
+          57
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "8C349FB4-47F1-2B75-6CCA-35800EF86517",
+      "name": null,
+      "rssi": -91,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          9,
+          8,
+          19,
+          255,
+          10,
+          0,
+          0,
+          104,
+          27,
+          88,
+          22,
+          8,
+          0,
+          145,
+          237,
+          96,
+          36,
+          173,
+          132,
+          249
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "DED639F9-8686-BEC9-7924-3E919A28485D",
+      "name": null,
+      "rssi": -92,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          18,
+          2,
+          0,
+          3
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "2ECC55AB-55AC-AFC3-CC31-C52403DA7CC3",
+      "name": null,
+      "rssi": -93,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x0006": [
+          1,
+          9,
+          32,
+          34,
+          228,
+          120,
+          132,
+          34,
+          123,
+          239,
+          73,
+          82,
+          161,
+          163,
+          150,
+          31,
+          8,
+          38,
+          139,
+          51,
+          36,
+          244,
+          244,
+          88,
+          173,
+          166,
+          115
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "5405BC15-C67E-6DA5-F9CA-3C191FC9221E",
+      "name": "net",
+      "rssi": -93,
+      "fitbit_candidate": false,
+      "service_uuids": [
+        "0000ff90-0000-1000-8000-00805f9b34fb",
+        "0000ff80-0000-1000-8000-00805f9b34fb"
+      ],
+      "manufacturer_data": {
+        "0x06A8": [
+          1,
+          48,
+          48,
+          48,
+          48,
+          48,
+          81,
+          49,
+          65,
+          65,
+          67,
+          69,
+          50,
+          48,
+          52,
+          1,
+          3,
+          0,
+          50,
+          172,
+          147,
+          196,
+          14,
+          226,
+          5,
+          0
+        ]
+      },
+      "tx_power": null
+    },
+    {
+      "address": "37B39C46-6A99-E9FD-BE25-1C2CC87EB78B",
+      "name": null,
+      "rssi": -94,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          16,
+          5,
+          6,
+          24,
+          147,
+          60,
+          129
+        ]
+      },
+      "tx_power": 0
+    },
+    {
+      "address": "4131006C-0C6B-C0F3-88FD-4CA7EFB49A3B",
+      "name": "NF8D1",
+      "rssi": -94,
+      "fitbit_candidate": false,
+      "service_uuids": [
+        "0000feaf-0000-1000-8000-00805f9b34fb"
+      ],
+      "manufacturer_data": {},
+      "tx_power": null
+    },
+    {
+      "address": "A5CE4D9C-BD14-8C1D-F4E8-DE19325B525E",
+      "name": null,
+      "rssi": -96,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {},
+      "tx_power": -13
+    },
+    {
+      "address": "5ACD4804-F320-889C-BC2C-AB176854756D",
+      "name": null,
+      "rssi": -98,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          15,
+          5,
+          144,
+          0,
+          100,
+          148,
+          160,
+          16,
+          2,
+          46,
+          4
+        ]
+      },
+      "tx_power": 0
+    },
+    {
+      "address": "650F535E-1102-258A-1396-7F2E63E8A3CC",
+      "name": null,
+      "rssi": -98,
+      "fitbit_candidate": false,
+      "service_uuids": [],
+      "manufacturer_data": {
+        "0x004C": [
+          9,
+          8,
+          19,
+          221,
+          10,
+          0,
+          0,
+          105,
+          27,
+          88,
+          22,
+          8,
+          0,
+          101,
+          54,
+          114,
+          137,
+          101,
+          249,
+          109
+        ]
+      },
+      "tx_power": null
+    }
+  ]
+}

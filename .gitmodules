@@ -1,0 +1,6 @@
+[submodule "vendor/fitness-app"]
+	path = vendor/fitness-app
+	url = https://github.com/seemoo-lab/fitness-app.git
+[submodule "vendor/BreakMi"]
+	path = vendor/BreakMi
+	url = https://github.com/Skiti/BreakMi.git
