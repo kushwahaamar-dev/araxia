@@ -221,7 +221,7 @@ export function TopBar({
       <div className="mt-2 hidden min-w-0 items-center gap-3 lg:flex">
         {wearerButtons}
         {authBlock}
-        <div className="ml-auto">{meta}</div>
+        <div className="ml-auto flex items-center gap-3"><Link href="/" className="btn btn-primary" aria-label="Back to Banking Demo">← Banking Demo</Link>{meta}</div>
       </div>
 
       {menuOpen && (
