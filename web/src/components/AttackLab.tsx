@@ -5,7 +5,7 @@ import { api } from "@/app/lib-client/api";
 import { createAction, runApproval } from "@/app/lib-client/flows";
 import { clone } from "@/app/lib-client/format";
 import type { Assertion, ExecuteDenied, ExecuteOk, Verdict } from "@/app/lib-client/types";
-import { JsonBlock, Panel, TEXT } from "./ui";
+import { JsonBlock, TEXT } from "./ui";
 
 interface Props {
   userId: string;
@@ -120,21 +120,19 @@ export function AttackLab({ userId, lastAssertion, approveBlocker }: Props) {
   const pasteInvalid = paste.trim().length > 0 && source() === null;
 
   return (
-    <Panel title="Attack lab" className="min-h-0">
-      <p className="text-[12px] text-muted">
-        Operates on the last issued assertion, or a pasted one. Every hop is the real endpoint.
-      </p>
-      <label className="flex flex-col gap-px text-[11px] text-dim">
-        Paste assertion JSON
+    <div className="flex min-h-0 flex-col gap-3">
+      <p className="comment">last assertion, or paste one. every hop is the real endpoint.</p>
+      <label className="cli-line">
+        <span>--json</span>
         <textarea
           className="field min-h-20 resize-y font-mono"
           value={paste}
           onChange={(e) => setPaste(e.target.value)}
-          placeholder={lastAssertion ? "leave empty to use the last issued assertion" : "paste an assertion.json"}
+          placeholder={lastAssertion ? "empty = last issued" : "paste assertion.json"}
         />
       </label>
-      {pasteInvalid && <p className={`text-[12px] ${TEXT.bad}`}>pasted JSON is not an assertion</p>}
-      <div className="grid grid-cols-1 gap-1.5">
+      {pasteInvalid && <p className={`text-[12px] ${TEXT.bad}`}>! pasted json is not an assertion</p>}
+      <div className="flex flex-col items-start gap-1">
         <button
           type="button"
           className="btn btn-danger"
@@ -142,7 +140,7 @@ export function AttackLab({ userId, lastAssertion, approveBlocker }: Props) {
           title={!hasSource ? "approve or paste an assertion first" : "tamper amount and hit the real executor"}
           onClick={mutateAmount}
         >
-          {busy === "mutate amount ×10" ? "…" : "Mutate amount ×10 and execute"}
+          {busy === "mutate amount ×10" ? "…" : "./mutate --amount x10"}
         </button>
         <button
           type="button"
@@ -151,7 +149,7 @@ export function AttackLab({ userId, lastAssertion, approveBlocker }: Props) {
           title={!hasSource ? "approve or paste an assertion first" : "swap the payee and hit the real executor"}
           onClick={mutatePayee}
         >
-          {busy === "change payee" ? "…" : "Change payee and execute"}
+          {busy === "change payee" ? "…" : "./mutate --dst acct_attacker"}
         </button>
         <button
           type="button"
@@ -160,26 +158,26 @@ export function AttackLab({ userId, lastAssertion, approveBlocker }: Props) {
           title={!hasSource ? "approve or paste an assertion first" : "replay the same assertion"}
           onClick={replay}
         >
-          {busy === "replay" ? "…" : "Replay original"}
+          {busy === "replay" ? "…" : "./replay"}
         </button>
         <button type="button" className="btn" disabled={busy !== null} onClick={staleAttempt}>
-          {busy === "stale" ? "…" : "Request new action while stale"}
+          {busy === "stale" ? "…" : "./request --while stale"}
         </button>
         <button type="button" className="btn" disabled={!hasSource || busy !== null} onClick={verifyPasted}>
-          {busy === "verify" ? "…" : "Verify pasted assertion"}
+          {busy === "verify" ? "…" : "./verify"}
         </button>
       </div>
       <div className="flex flex-col gap-2 overflow-auto">
-        {log.length === 0 && <p className="text-[12px] text-dim">no attacks yet</p>}
+        {log.length === 0 && <p className="comment">no attacks yet</p>}
         {log.map((entry) => (
-          <div key={entry.id} className="flex flex-col gap-1 rounded-sm border border-line-2 p-2">
-            <div className="font-mono text-[11px] font-semibold tracking-wide uppercase">{entry.label}</div>
+          <div key={entry.id} className="flex flex-col gap-1">
+            <div className="text-[13px]">$ {entry.label}</div>
             {entry.hops.map((hop, i) => (
               <JsonBlock key={i} value={{ hop: hop.label, body: hop.body }} status={hop.status} />
             ))}
           </div>
         ))}
       </div>
-    </Panel>
+    </div>
   );
 }

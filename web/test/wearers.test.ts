@@ -21,11 +21,16 @@ describe("wearer handoff", () => {
     expect(wearerHalted()).toBe(false);
   });
 
-  it("keeps the halt until someone switches, even if later windows match", () => {
+  it("clears halt when the stream matches the active wearer again", () => {
     applyWearerHint({ guessed_user: "u_laksh", wearer_changed: 1, window_median_bpm: 93 });
     expect(wearerHalted()).toBe(true);
     applyWearerHint({ guessed_user: "u_amar", wearer_changed: 0, window_median_bpm: 115 });
-    expect(wearerHalted()).toBe(true);
+    expect(wearerHalted()).toBe(false);
+  });
+
+  it("does not halt when a continuity break reports the same wearer", () => {
+    applyWearerHint({ guessed_user: "u_amar", wearer_changed: 1, window_median_bpm: 115 });
+    expect(wearerHalted()).toBe(false);
   });
 });
 

@@ -9,18 +9,29 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="araxia-noise relative flex min-h-screen items-center justify-center overflow-x-hidden px-6">
-      <div className="araxia-orb pointer-events-none fixed -top-80 -left-72 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(216,185,138,0.11),transparent_62%)] blur-3xl" />
-      <div className="relative z-10 max-w-md text-center">
-        <Image src="/logo-white.png" alt="Araxia" width={220} height={59} className="mx-auto h-8 w-auto" />
-        <p className="mt-6 font-mono text-[11px] tracking-[0.22em] text-dim uppercase">HTTP 404</p>
-        <h1 className="font-display mt-3 text-4xl tracking-[-0.04em] text-fg">This page is not in the console.</h1>
-        <p className="mt-3 text-sm text-muted">
-          Araxia is one screen. There is no unused navigation and no hidden admin path.
-        </p>
-        <Link href="/" className="btn btn-primary mt-6 inline-flex">
-          Back to the console
-        </Link>
+    <div className="relative min-h-screen overflow-x-hidden px-5">
+      <div className="shard-field" aria-hidden>
+        <i className="shard shard-a" />
+        <i className="shard shard-b" />
+      </div>
+      <div className="tty">
+        <div className="tty-bar">
+          <span className="tty-dots" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>araxia — tty.ble</span>
+        </div>
+        <div className="tty-body">
+          <Image src="/logo-white.png" alt="Araxia" width={220} height={59} className="h-5 w-auto opacity-90" />
+          <p className="term-prompt mt-6">cd /missing</p>
+          <h1 className="font-display mt-2 text-6xl leading-none text-white">404</h1>
+          <p className="mt-3 text-[13px] text-muted">bash: cd: /missing: No such file or directory</p>
+          <Link href="/" className="btn btn-primary mt-6 self-start">
+            cd ~
+          </Link>
+        </div>
       </div>
     </div>
   );

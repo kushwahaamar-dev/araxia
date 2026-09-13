@@ -34,6 +34,8 @@ describe("Persona gate", () => {
     await startInquiry("u_test", fakeFetch("approved"));
     expect(isPersonaApproved("u_test")).toBe(true);
     expect(() => requirePersonaApproved("u_test")).not.toThrow();
+    const again = await startInquiry("u_test", fakeFetch("pending"));
+    expect(again.status).toBe("approved");
   });
 
   it("is a no-op when Persona is not configured", () => {

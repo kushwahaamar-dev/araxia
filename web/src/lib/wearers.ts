@@ -41,7 +41,7 @@ export function writeRosterActive(userId: string): void {
   writeFileSync(ROSTER, JSON.stringify(raw, null, 2) + "\n");
 }
 
-export function enrollCentroid(userId: string, centroid: number, sd = 3.5): void {
+export function enrollCentroid(userId: string, centroid: number, sd = 8): void {
   mkdirSync(path.dirname(ROSTER), { recursive: true });
   const raw = existsSync(ROSTER) ? JSON.parse(readFileSync(ROSTER, "utf8")) : seedRoster();
   raw.people = raw.people ?? {};
@@ -91,7 +91,8 @@ export function applyWearerHint(hint: { guessed_user?: string; wearer_changed?: 
   const changed = hint.wearer_changed === 1;
   const sess = getWearerSession();
   let halt = sess.halt ? 1 : 0;
-  if (changed) halt = 1;
+  if (changed && guessed !== "" && guessed !== sess.active_user) halt = 1;
+  if (guessed === sess.active_user) halt = 0;
   getDb()
     .prepare(
       "UPDATE wearer_session SET guessed_user = ?, halt = ?, last_median = ?, updated_at = ? WHERE id = 1",

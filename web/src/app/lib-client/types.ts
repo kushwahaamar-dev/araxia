@@ -150,7 +150,7 @@ export interface StatusResponse {
     guessed_user: string;
     halt: boolean;
     last_median: number;
-    team: Array<{ user_id: string; label: string; kyc: string; ready: boolean }>;
+    team: Array<{ user_id: string; label: string; kyc: string; ready: boolean; passkeys: number }>;
   };
 }
 

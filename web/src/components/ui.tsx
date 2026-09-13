@@ -39,16 +39,6 @@ export function toneFor(state: string | null | undefined): Tone {
   return TONE_BY_STATE[state] ?? "neutral";
 }
 
-// Literal class strings so Tailwind can see them.
-const BADGE: Record<Tone, string> = {
-  ok: "border-ok/50 bg-ok/10 text-ok",
-  warn: "border-warn/50 bg-warn/10 text-warn",
-  hot: "border-hot/50 bg-hot/10 text-hot",
-  bad: "border-bad/50 bg-bad/10 text-bad",
-  off: "border-off/50 bg-off/10 text-off",
-  neutral: "border-line-2 bg-panel-2 text-fg",
-};
-
 export const TEXT: Record<Tone, string> = {
   ok: "text-ok",
   warn: "text-warn",
@@ -58,21 +48,10 @@ export const TEXT: Record<Tone, string> = {
   neutral: "text-fg",
 };
 
-export const FILL: Record<Tone, string> = {
-  ok: "bg-ok",
-  warn: "bg-warn",
-  hot: "bg-hot",
-  bad: "bg-bad",
-  off: "bg-off",
-  neutral: "bg-line-2",
-};
-
 export function StateBadge({ value, tone, className = "" }: { value: string; tone?: Tone; className?: string }) {
   const t = tone ?? toneFor(value);
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-px font-mono text-[11px] font-semibold tracking-wide ${BADGE[t]} ${className}`}
-    >
+    <span className={`badge ${TEXT[t]} ${className}`}>
       {value}
     </span>
   );
@@ -97,7 +76,7 @@ export function Panel({
         <span>{title}</span>
         {right}
       </header>
-      <div className="flex flex-1 flex-col gap-3 p-3">{children}</div>
+      <div className="flex flex-1 flex-col gap-3 pt-1">{children}</div>
     </section>
   );
 }
@@ -106,9 +85,7 @@ export function JsonBlock({ value, status, className = "" }: { value: unknown; s
   return (
     <div className={`relative ${className}`}>
       {status !== undefined && (
-        <span className="absolute top-1 right-1 rounded-sm border border-line-2 bg-panel-2 px-1 font-mono text-[10px] text-muted">
-          {status === 0 ? "HTTP —" : `HTTP ${status}`}
-        </span>
+        <p className="comment mb-1">{status === 0 ? "http —" : `http ${status}`}</p>
       )}
       <pre className="mono-block max-h-64">{pretty(value)}</pre>
     </div>
@@ -116,7 +93,7 @@ export function JsonBlock({ value, status, className = "" }: { value: unknown; s
 }
 
 export function Notice({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
-  return <p className={`rounded-xl border border-line px-3 py-2 text-[12px] ${TEXT[tone]}`}>{children}</p>;
+  return <p className={`text-[12px] ${TEXT[tone]}`}>! {children}</p>;
 }
 
 export function Copyable({

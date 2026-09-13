@@ -14,7 +14,6 @@ from pathlib import Path
 
 ROSTER_PATH = Path.home() / ".araxia" / "wearers.json"
 Z_UNKNOWN = 2.0
-STREAK_N = 2
 
 
 @dataclass(frozen=True)
@@ -36,11 +35,12 @@ def default_roster() -> dict:
     }
 
 
-def load_roster(path: Path = ROSTER_PATH) -> dict:
-    if not path.exists():
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(default_roster(), indent=2) + "\n")
-    return json.loads(path.read_text())
+def load_roster(path: Path | None = None) -> dict:
+    roster = path or ROSTER_PATH
+    if not roster.exists():
+        roster.parent.mkdir(parents=True, exist_ok=True)
+        roster.write_text(json.dumps(default_roster(), indent=2) + "\n")
+    return json.loads(roster.read_text())
 
 
 def people(roster: dict) -> list[Person]:
@@ -75,7 +75,6 @@ def guess(median: float, roster: dict) -> str:
 
 class HandoffTracker:
     def __init__(self) -> None:
-        self._streak = 0
         self._last_guess = ""
         self._broken = False
 
@@ -86,22 +85,15 @@ class HandoffTracker:
         median = int(round(statistics.median(bpms))) if bpms else 0
         if presence in ("STALE", "DISCONNECTED"):
             self._broken = True
-            self._streak = 0
             return active, self._last_guess, 0, median
         if len(bpms) < 5 or presence != "READY":
             return active, self._last_guess, 0, median
         guessed = guess(float(median), roster)
-        mismatch = guessed != "" and guessed != active
-        if mismatch:
-            if guessed == self._last_guess:
-                self._streak += 1
-            else:
-                self._streak = 1
-        else:
-            self._streak = 0
         self._last_guess = guessed
-        changed = 1 if mismatch and self._streak >= STREAK_N else 0
+        # Overlapping HR while the stream never dropped is not a handoff.
+        changed = 0
         if self._broken:
             self._broken = False
-            changed = 1
+            if guessed and guessed != active:
+                changed = 1
         return active, guessed, changed, median

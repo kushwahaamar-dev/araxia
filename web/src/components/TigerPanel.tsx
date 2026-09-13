@@ -5,68 +5,44 @@ import { Panel, StateBadge } from "./ui";
 export function TigerPanel({ tiger }: { tiger: StatusResponse["tiger"] | undefined }) {
   if (!tiger) {
     return (
-      <Panel title="TigerData" right={<StateBadge value="TIMESCALE" tone="warn" />}>
-        <p className="text-[12px] text-dim">connecting to TigerData…</p>
+      <Panel title="cat rails/tiger" right={<StateBadge value="timescale" tone="warn" />}>
+        <p className="comment">connecting…</p>
       </Panel>
     );
   }
 
   return (
     <Panel
-      title="TigerData"
+      title="cat rails/tiger"
       right={
-        <span className="flex items-center gap-2">
-          <StateBadge value="REPLICA" tone="warn" />
-          <StateBadge
-            value={tiger.configured ? (tiger.reachable ? "LIVE" : "DOWN") : "NEED URL"}
-            tone={tiger.configured && tiger.reachable ? "ok" : "warn"}
-          />
-        </span>
+        <StateBadge
+          value={tiger.configured ? (tiger.reachable ? "live" : "down") : "need url"}
+          tone={tiger.configured && tiger.reachable ? "ok" : "warn"}
+        />
       }
     >
-      <p className="text-[12px] text-muted">
-        Timescale hypertables hold users, passkeys, evidence, executions, health snapshots, and
-        Solana memos. SQLite still claims nonces. Restarting this machine restores auth from here.
-      </p>
-      {tiger.error && <p className="text-[12px] text-bad">{tiger.error}</p>}
-      <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div>
-          <dt className="text-[11px] tracking-wide text-dim uppercase">Users</dt>
-          <dd className="font-display text-2xl">{tiger.users}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] tracking-wide text-dim uppercase">Passkeys</dt>
-          <dd className="font-display text-2xl">{tiger.passkeys}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] tracking-wide text-dim uppercase">Evidence</dt>
-          <dd className="font-display text-2xl">{tiger.evidence}</dd>
-        </div>
-        <div>
-          <dt className="text-[11px] tracking-wide text-dim uppercase">Events</dt>
-          <dd className="font-display text-2xl">{tiger.events}</dd>
-          <dd className="text-[11px] text-dim">{clock(tiger.fetched_at)}</dd>
-        </div>
+      <p className="comment">replica. sqlite still claims nonces.</p>
+      {tiger.error && <p className="text-[12px] text-bad">! {tiger.error}</p>}
+      <dl className="dump mt-2">
+        <dt>users</dt>
+        <dd>{tiger.users}</dd>
+        <dt>passkeys</dt>
+        <dd>{tiger.passkeys}</dd>
+        <dt>evidence</dt>
+        <dd>{tiger.evidence}</dd>
+        <dt>events</dt>
+        <dd>
+          {tiger.events} <span className="text-dim">{clock(tiger.fetched_at)}</span>
+        </dd>
       </dl>
       {tiger.recent.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left font-mono text-[11px]">
-            <thead className="text-[10px] tracking-wide text-dim uppercase">
-              <tr>
-                <th className="border-b border-line py-1 pr-3 font-medium">when</th>
-                <th className="border-b border-line py-1 font-medium">kind</th>
-              </tr>
-            </thead>
-            <tbody>
-              {tiger.recent.map((r, i) => (
-                <tr key={`${r.ts}-${i}`}>
-                  <td className="border-b border-line/60 py-1.5 pr-3 text-dim">{clock(r.ts)}</td>
-                  <td className="border-b border-line/60 py-1.5">{r.kind}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="mt-2 flex flex-col gap-px font-mono text-[12px] text-dim">
+          {tiger.recent.map((r, i) => (
+            <li key={`${r.ts}-${i}`}>
+              {clock(r.ts)}  {r.kind}
+            </li>
+          ))}
+        </ul>
       )}
     </Panel>
   );

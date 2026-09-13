@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { copyLatestEvidenceTo } from "@/lib/evidence";
 import { errorResponse, HttpError, parseBody } from "@/lib/http";
+import { listPasskeys } from "@/lib/passkeys";
 import { getKyc, isPersonaApproved } from "@/lib/persona";
 import { getWearerSession, labelFor, switchWearer, TEAM } from "@/lib/wearers";
 
@@ -17,6 +18,7 @@ export async function GET(): Promise<Response> {
       ...p,
       kyc: getKyc(p.user_id)?.status ?? "none",
       ready: isPersonaApproved(p.user_id),
+      passkeys: listPasskeys(p.user_id).length,
     })),
   });
 }

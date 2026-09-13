@@ -7,6 +7,7 @@ import { errorResponse } from "@/lib/http";
 import { getIssuer } from "@/lib/issuer";
 import { getFitbitSnapshot } from "@/lib/fitbit";
 import { getNessieLedger } from "@/lib/nessie";
+import { listPasskeys } from "@/lib/passkeys";
 import { getKyc, isPersonaApproved, personaConfigured } from "@/lib/persona";
 import { assuranceFor, evidenceIsFresh, POLICY_HASH } from "@/lib/policy";
 import { requireUserParam } from "@/lib/schemas";
@@ -54,6 +55,7 @@ export async function GET(req: Request): Promise<Response> {
           ...p,
           kyc: getKyc(p.user_id)?.status ?? "none",
           ready: isPersonaApproved(p.user_id),
+          passkeys: listPasskeys(p.user_id).length,
         })),
       },
     });

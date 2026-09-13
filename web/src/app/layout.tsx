@@ -1,13 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { IBM_Plex_Mono, Newsreader, Sora } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
-
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
 
 const ibmPlexMono = IBM_Plex_Mono({
   variable: "--font-ibm-plex-mono",
@@ -15,15 +9,9 @@ const ibmPlexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  weight: ["500", "600"],
-});
-
 export const metadata: Metadata = {
   title: {
-    default: "Araxia — wearable permission console",
+    default: "Araxia — wearable permission",
     template: "%s — Araxia",
   },
   description:
@@ -47,10 +35,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={`${sora.variable} ${ibmPlexMono.variable} ${newsreader.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${ibmPlexMono.variable} h-full`}>
       <body className="min-h-full overflow-x-hidden">{children}</body>
     </html>
   );

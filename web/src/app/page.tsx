@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { BankingDemo } from "@/components/BankingDemo";
-
-export const metadata: Metadata = {
-  title: "Small One",
-};
+import { Console } from "@/components/Console";
 
 export default function Home() {
-  return <BankingDemo />;
+  return <Console />;
 }

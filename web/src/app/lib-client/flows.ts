@@ -62,9 +62,12 @@ export async function runApproval(userId: string, actionDigest: string): Promise
   return { steps, decision: verify.body, error: null };
 }
 
-export async function registerPasskey(userId: string): Promise<{ cred_id: string } | { error: string }> {
+export async function registerPasskey(
+  userId: string,
+  displayName = userId,
+): Promise<{ cred_id: string } | { error: string }> {
   const opts = await api<PublicKeyCredentialCreationOptionsJSON>("/api/passkeys/register/options", {
-    body: { user_id: userId, display_name: userId },
+    body: { user_id: userId, display_name: displayName },
   });
   if (opts.status < 200 || opts.status >= 300 || !opts.body || isApiError(opts.body)) {
     return { error: errorText(opts, "registration options failed") };

@@ -68,6 +68,8 @@ export function limitForPath(pathname: string, method = "GET"): number {
   if (method === "GET" && (pathname.startsWith("/api/status") || pathname.startsWith("/api/passkeys"))) return 180;
   if (pathname.startsWith("/api/propose")) return 8;
   if (pathname.startsWith("/api/execute")) return 12;
+  if (pathname.startsWith("/api/evidence")) return 240;
+  if (pathname.startsWith("/api/kyc") && method === "PUT") return 180;
   if (pathname.startsWith("/api/kyc") || pathname.startsWith("/api/passkeys") || pathname.startsWith("/api/approve")) return 10;
   if (pathname.startsWith("/api/")) return 60;
   return 240;

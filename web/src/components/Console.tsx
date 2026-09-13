@@ -17,6 +17,7 @@ import { TopBar } from "./TopBar";
 const STATUS_POLL_MS = 1000;
 const HISTORY_LEN = 60;
 const YEAR = new Date().getFullYear();
+const LOGIN = `last login: ${new Date().toDateString()} from ble`;
 
 function approveBlocker(status: StatusResponse | null, reachable: boolean, hasPasskey: boolean): string | null {
   if (!reachable) return "service unreachable";
@@ -35,7 +36,6 @@ export function Console() {
   const [reachable, setReachable] = useState(true);
   const [history, setHistory] = useState<PollSample[]>([]);
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
-  const [lastAssertion, setLastAssertion] = useState<Assertion | null>(null);
   const [userId, setUserId] = useState(DEMO_USER);
   const [initialAuthorization] = useState<{ created: CreatedAction; assertion: Assertion | null } | null>(() => {
     if (typeof window === "undefined" || new URLSearchParams(window.location.search).get("focus") !== "latest") return null;
@@ -46,6 +46,7 @@ export function Console() {
       return null;
     }
   });
+  const [lastAssertion, setLastAssertion] = useState<Assertion | null>(initialAuthorization?.assertion ?? null);
 
   const loadPasskeys = useCallback(async (user: string) => {
     const r = await api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(user)}`);
@@ -89,55 +90,96 @@ export function Console() {
 
   const hasPasskey = passkeys.length > 0;
   const blocker = approveBlocker(status, reachable, hasPasskey);
+  const live = status?.evidence?.presence === "READY";
 
   return (
-    <div className="araxia-noise relative min-h-screen overflow-x-hidden">
-      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:88px_88px] opacity-30" />
-      <div className="araxia-orb pointer-events-none fixed -top-80 -left-72 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(216,185,138,0.11),transparent_62%)] blur-3xl" />
-      <div className="araxia-orb-alt pointer-events-none fixed -right-72 -bottom-80 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(159,183,154,0.09),transparent_64%)] blur-3xl" />
+    <div className="relative min-h-screen overflow-x-hidden px-3 sm:px-5">
+      <div className="shard-field" aria-hidden>
+        <i className="shard shard-a" />
+        <i className="shard shard-b" />
+        <i className="shard shard-c" />
+        {live && <i className="shard shard-green" />}
+      </div>
+      <div className="tty">
+        <div className="tty-bar">
+          <span className="tty-dots" aria-hidden>
+            <i />
+            <i />
+            <i />
+          </span>
+          <span>araxia — tty.ble</span>
+          <span className="ml-auto">{live ? "READY" : "idle"}</span>
+        </div>
+        <div className="tty-body">
+          <pre className="text-[12px] leading-relaxed text-muted whitespace-pre-wrap">
+            {`Araxia 16  tty.ble
+# sandbox. not a bank.
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col gap-3 p-3 pb-8">
-        <TopBar
-          userId={userId}
-          reachable={reachable}
-          issuerKid={status?.issuer.kid ?? null}
-          policyHash={status?.policy_hash ?? null}
-          passkeys={passkeys}
-          kyc={status?.kyc}
-          rails={status?.rails}
-          nessie={status?.nessie}
-          wearer={status?.wearer}
-          onPasskeysChanged={() => loadPasskeys(userId)}
-          onUserSwitched={async (next) => {
-            setUserId(next);
-            await loadPasskeys(next);
-          }}
-        />
-        <main className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(0,380px)]">
+${LOGIN}`}
+          </pre>
+
+          <TopBar
+            userId={userId}
+            reachable={reachable}
+            issuerKid={status?.issuer.kid ?? null}
+            policyHash={status?.policy_hash ?? null}
+            passkeys={passkeys}
+            kyc={status?.kyc}
+            rails={status?.rails}
+            nessie={status?.nessie}
+            wearer={status?.wearer}
+            onPasskeysChanged={() => loadPasskeys(userId)}
+            onUserSwitched={async (next) => {
+              setUserId(next);
+              await loadPasskeys(next);
+            }}
+          />
+
           <PresencePanel status={status} reachable={reachable} history={history} now={now} />
-          <ActionPanel userId={userId} now={now} approveBlocker={blocker} onAssertion={setLastAssertion} initialAuthorization={initialAuthorization} />
-          <AttackLab userId={userId} lastAssertion={lastAssertion} approveBlocker={blocker} />
-        </main>
-        <FitbitPanel fitbit={status?.fitbit} liveBleBpm={status?.wearer?.last_median ?? status?.fitbit?.live_ble_bpm} />
-        <NessieLedger ledger={status?.nessie} />
-        <SolanaPanel solana={status?.solana} />
-        <TigerPanel tiger={status?.tiger} />
-        <ExecutionsTable executions={status?.executions ?? []} reachable={reachable} />
 
-        <footer className="flex flex-col gap-2 border-t border-line px-1 pt-4 text-[11px] text-dim sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-center gap-2">
-            <img src="/logo-white.png" alt="" className="h-3.5 w-auto opacity-70" />
-            <span>© {YEAR}. Small One — demo only, not advice.</span>
-          </p>
-          <p className="flex flex-wrap gap-x-4 gap-y-1">
-            <a className="hover:text-accent" href="mailto:amkushwa@ttu.edu">
-              amkushwa@ttu.edu
-            </a>
-            <a className="hover:text-accent" href="https://github.com/kushwahaamar-dev/araxia" rel="noreferrer">
-              source
-            </a>
-          </p>
-        </footer>
+          <main className="grid min-w-0 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.75fr)]">
+            <ActionPanel
+              userId={userId}
+              now={now}
+              approveBlocker={blocker}
+              onAssertion={setLastAssertion}
+              initialAuthorization={initialAuthorization}
+            />
+            <div className="flex min-w-0 flex-col gap-8">
+              <details className="group">
+                <summary className="cursor-pointer list-none text-[13px] text-muted marker:content-none [&::-webkit-details-marker]:hidden">
+                  <span className="term-prompt">./attack</span>
+                  <span className="comment ml-2 group-open:hidden">closed</span>
+                </summary>
+                <div className="mt-3">
+                  <AttackLab userId={userId} lastAssertion={lastAssertion} approveBlocker={blocker} />
+                </div>
+              </details>
+              <ExecutionsTable executions={status?.executions ?? []} reachable={reachable} />
+            </div>
+          </main>
+
+          <section aria-label="Rails" className="grid min-w-0 grid-cols-1 gap-8 md:grid-cols-2">
+            <NessieLedger ledger={status?.nessie} />
+            <SolanaPanel solana={status?.solana} />
+            <TigerPanel tiger={status?.tiger} />
+            <FitbitPanel fitbit={status?.fitbit} liveBleBpm={status?.wearer?.last_median ?? status?.fitbit?.live_ble_bpm} />
+          </section>
+
+          <footer className="flex flex-col gap-2 border-t border-line pt-5 text-[12px] text-dim sm:flex-row sm:items-center sm:justify-between">
+            <p className="comment">
+              {YEAR} small one. demo only. type logout to leave.
+            </p>
+            <p className="flex flex-wrap gap-x-4 gap-y-1">
+              <a className="hover:text-accent" href="mailto:amkushwa@ttu.edu">
+                amkushwa@ttu.edu
+              </a>
+              <a className="hover:text-accent" href="https://github.com/kushwahaamar-dev/araxia" rel="noreferrer">
+                source
+              </a>
+            </p>
+          </footer>
+        </div>
       </div>
     </div>
   );

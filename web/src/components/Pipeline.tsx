@@ -1,6 +1,6 @@
 import { clock } from "@/app/lib-client/format";
 import { looksLikeSolanaSig } from "@/app/lib-client/solscan";
-import { FILL, SolscanLink, TEXT, toneFor, type Tone } from "./ui";
+import { SolscanLink, TEXT, toneFor, type Tone } from "./ui";
 
 export type Terminal = "CONFIRMED" | "FAILED" | "UNCERTAIN" | "DENIED";
 export type StageName = "PROPOSED" | "APPROVED" | "ASSERTED" | "SENT";
@@ -23,32 +23,29 @@ export function Pipeline({ state }: { state: PipelineState }) {
   ];
 
   return (
-    <div className="flex flex-col gap-2" aria-live="polite" aria-label="execution pipeline">
-      <ol className="flex items-stretch gap-1">
+    <div className="flex flex-col gap-1" aria-live="polite" aria-label="execution pipeline">
+      <p className="term-prompt text-[12px]">pipeline</p>
+      <ol className="flex flex-col gap-px font-mono text-[12px]">
         {slots.map((slot, i) => {
           const done = slot.at !== undefined;
           const isCurrent = slot.name === current;
           const tone: Tone = slot.name === "OUTCOME" ? "off" : (STAGES as string[]).includes(slot.name) ? "ok" : toneFor(slot.name);
           return (
-            <li key={i} className="flex min-w-0 flex-1 flex-col gap-1" aria-current={isCurrent ? "step" : undefined}>
-              <div className={`h-1 rounded-[1px] ${done ? FILL[tone] : "bg-line"}`} />
-              <div
-                className={`truncate font-mono text-[11px] font-semibold ${
-                  done ? TEXT[tone] : "text-dim"
-                } ${isCurrent ? "underline decoration-dotted underline-offset-4" : ""}`}
-              >
-                {slot.name}
-              </div>
-              <div className="font-mono text-[10px] text-dim">{done ? clock(slot.at) : "—"}</div>
+            <li
+              key={i}
+              aria-current={isCurrent ? "step" : undefined}
+              className={`${done ? TEXT[tone] : "text-dim"} ${isCurrent ? "text-white" : ""}`}
+            >
+              {done ? "*" : " "} {slot.name.padEnd(10, " ")}  {done ? clock(slot.at) : "—"}
             </li>
           );
         })}
       </ol>
       {(state.providerRef || state.note || state.terminal === "UNCERTAIN") && (
-        <dl className="kv grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+        <dl className="dump mt-2">
           {state.providerRef && (
             <>
-              <dt>provider_ref</dt>
+              <dt>ref</dt>
               <dd>
                 {looksLikeSolanaSig(state.providerRef) ? (
                   <SolscanLink kind="tx" id={state.providerRef}>
@@ -63,13 +60,13 @@ export function Pipeline({ state }: { state: PipelineState }) {
           {state.note && (
             <>
               <dt>note</dt>
-              <dd className="font-sans">{state.note}</dd>
+              <dd>{state.note}</dd>
             </>
           )}
           {state.terminal === "UNCERTAIN" && (
             <>
               <dt>action</dt>
-              <dd className={`font-sans ${TEXT.hot}`}>no retry: reconcile manually</dd>
+              <dd className={TEXT.hot}>no retry: reconcile manually</dd>
             </>
           )}
         </dl>

@@ -80,7 +80,10 @@ export async function startInquiry(userId: string, fetchImpl: typeof fetch = fet
   const template = process.env.PERSONA_TEMPLATE_ID;
   if (!template) throw new HttpError(503, "PERSONA_TEMPLATE_ID not configured");
   const existing = getKyc(userId);
-  if (existing?.inquiry_id && existing.status !== "expired" && existing.status !== "declined" && existing.status !== "failed") {
+  if (existing && PERSONA_PASS.has(existing.status)) return existing;
+  const dead = new Set(["expired", "declined", "failed"]);
+  const stale = existing != null && nowMs() - existing.updated_at > 12 * 60_000;
+  if (existing?.inquiry_id && !dead.has(existing.status) && !stale) {
     return refreshInquiry(userId, fetchImpl);
   }
   const res = await fetchImpl(`${API}/inquiries`, {

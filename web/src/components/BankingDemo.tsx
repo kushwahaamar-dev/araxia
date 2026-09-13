@@ -125,13 +125,13 @@ export function BankingDemo() {
   }, [kycBlocked, passkeys.length, reachable, status]);
 
   const reset = () => { setStage("entry"); setCreated(null); setDecision(null); setAssertion(null); setResult(null); setError(null); setDetailsOpen(false); };
-  const inspectHref = "/console?focus=latest";
+  const inspectHref = "/?focus=latest";
 
   return (
     <div className="banking-shell">
       <header className="banking-header">
         <div className="banking-header-inner">
-          <Link href="/" className="brand-lockup" aria-label="Small One home"><span className="brand-mark" aria-hidden="true" /> <span className="brand-wordmark"><span className="brand-small">small</span> <span className="brand-one">One</span></span></Link>
+          <Link href="/bank" className="brand-lockup" aria-label="Small One home"><span className="brand-mark" aria-hidden="true" /> <span className="brand-wordmark"><span className="brand-small">small</span> <span className="brand-one">One</span></span></Link>
           <div className="header-meta"><span className="nessie-label">PRESENCE PAY</span><span className="header-user">Amar K. <span className="avatar">AK</span></span></div>
         </div>
       </header>
