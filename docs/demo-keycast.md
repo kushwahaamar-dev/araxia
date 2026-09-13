@@ -51,17 +51,16 @@ You **cannot** claim as true:
 
 **We bind approval to one exact action, and we require a human body still on the wrist when that action executes. The bank never sees a heartbeat.**
 
-### 0:25 — Sensors `[point at presence + Fitbit panel]`
+### 0:25 — Fitbit Air `[hold up band · ~15 s · point at READY]`
 
-**This is a Google Fitbit Air. We reverse-mapped its BLE surface. Over the air we get Heart Rate Service — packets like `01`, then a BPM integer, about once a second.**
+**Google Fitbit Air. We reverse-mapped the BLE — Heart Rate Service, a BPM integer about once a second. No RR intervals, no skin-contact flag, no temp on that pipe — we measured it.**
 
-**What we do *not* get on that pipe: no beat-to-beat RR intervals, no skin-contact flag, no temperature. We measured that. So we don’t pretend.**
+**The gate is variation. Off-wrist it freezes the last BPM forever; packets still arrive. We go STALE in about eight seconds. Raw BPM never leaves this laptop — only signed window stats.**
 
-**What we *do* use for the gate is variation in that BPM stream. Off-wrist, this band lies — it freezes on the last value forever. Packets keep arriving. A naive “still connected” check fails. We flip STALE after about eight seconds frozen. Measured, not marketing.**
+`[optional one breath, if panel visible]`  
+**Google Health on the side is context. Not in the trust boundary.**
 
-**On the side you also see Google Health cloud context — resting rate, latest intraday, the fuller body picture. We can show it. We do not put raw physiology in the trust boundary. The bridge ships signed *window statistics* only. Raw BPM stays on this laptop.**
-
-### 0:55 — Talk to the agent `[/ → ./gemini  OR  narrate then cut to /bank]`
+### 0:40 — Talk to the agent `[/ → ./gemini  OR  narrate then cut to /bank]`
 
 **I’m going to talk to the agent like a user would.**
 
@@ -199,6 +198,14 @@ Use when judges linger. Same hard rails.
 | Rails | `/` bottom | Nessie ledger, Solana, Tiger |
 | Team | `/` | `su` Amar / Jagrati |
 | Solana explorer | receipt / panel | Solscan link |
+
+---
+
+## Fitbit Air — 15-second card (memorize)
+
+**Google Fitbit Air. We reverse-mapped the BLE — Heart Rate Service, a BPM integer about once a second. No RR intervals, no skin-contact flag, no temp on that pipe — we measured it. The gate is variation: off-wrist it freezes forever while packets keep arriving; we go STALE in about eight seconds. Raw BPM stays on this laptop — only signed window stats leave.**
+
+(~12–15 s at a calm pace. Drop the Google Health breath if you’re tight on time.)
 
 ---
 
