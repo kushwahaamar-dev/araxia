@@ -200,16 +200,18 @@ async def enroll(args: argparse.Namespace) -> int:
     tracker = PresenceTracker()
     t_end = time.monotonic() + args.seconds
     print(f"bridge: enrolling {args.user} for {args.seconds:.0f}s; keep the band on, stay seated", flush=True)
-    async for sample in ble_samples(args.address, 15.0):
-        if time.monotonic() >= t_end:
-            break
-        if sample is None:
-            continue
-        tracker.observe(sample.bpm, sample.t)
-        if tracker.presence(sample.t).value == "READY" and 30 <= sample.bpm <= 220:
-            series.append((sample.t, sample.bpm))
-        if len(series) % 30 == 0 and series:
-            print(f"bridge: {len(series)} accepted packets, {t_end - time.monotonic():.0f}s left", flush=True)
+    async with contextlib.aclosing(ble_samples(args.address, 15.0)) as samples:
+        async for sample in samples:
+            if time.monotonic() >= t_end:
+                break
+            if sample is None:
+                continue
+            tracker.observe(sample.bpm, sample.t)
+            if tracker.presence(sample.t).value == "READY" and 30 <= sample.bpm <= 220:
+                series.append((sample.t, sample.bpm))
+            if len(series) % 30 == 0 and series:
+                left = t_end - time.monotonic()
+                print(f"bridge: {len(series)} accepted packets, {left:.0f}s left", flush=True)
     try:
         model = WearerModel.enroll(args.user, series)
     except ValueError as exc:
