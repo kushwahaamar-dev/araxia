@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { api, DEMO_USER } from "@/app/lib-client/api";
 import type { Assertion, CreatedAction, Passkey, Presence, StatusResponse } from "@/app/lib-client/types";
 import { useNow } from "@/app/lib-client/useNow";
@@ -17,7 +17,7 @@ import { TopBar } from "./TopBar";
 const STATUS_POLL_MS = 1000;
 const HISTORY_LEN = 60;
 const YEAR = new Date().getFullYear();
-const LOGIN = `last login: ${new Date().toDateString()} from ble`;
+const emptySubscribe = () => () => undefined;
 
 function approveBlocker(status: StatusResponse | null, reachable: boolean, hasPasskey: boolean): string | null {
   if (!reachable) return "service unreachable";
@@ -30,6 +30,42 @@ function approveBlocker(status: StatusResponse | null, reachable: boolean, hasPa
   return null;
 }
 
+type FocusAuth = { created: CreatedAction; assertion: Assertion | null };
+
+function readFocusAuthorization(): FocusAuth | null {
+  if (new URLSearchParams(window.location.search).get("focus") !== "latest") return null;
+  try {
+    const value = JSON.parse(sessionStorage.getItem("araxia.latestAuthorization") ?? "null") as {
+      created?: CreatedAction;
+      assertion?: Assertion | null;
+    } | null;
+    return value?.created ? { created: value.created, assertion: value.assertion ?? null } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** false on the server and during hydration; true only after the client store snapshot applies. */
+function useClientReady(): boolean {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
+function useFocusAuthorization(): FocusAuth | null {
+  const ready = useClientReady();
+  const auth = useSyncExternalStore(emptySubscribe, readFocusAuthorization, () => null);
+  return ready ? auth : null;
+}
+
+function useLoginLine(): string {
+  const ready = useClientReady();
+  const line = useSyncExternalStore(
+    emptySubscribe,
+    () => `last login: ${new Date().toDateString()} from ble`,
+    () => "last login: ble",
+  );
+  return ready ? line : "last login: ble";
+}
+
 export function Console() {
   const now = useNow(250);
   const [status, setStatus] = useState<StatusResponse | null>(null);
@@ -37,16 +73,9 @@ export function Console() {
   const [history, setHistory] = useState<PollSample[]>([]);
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [userId, setUserId] = useState(DEMO_USER);
-  const [initialAuthorization] = useState<{ created: CreatedAction; assertion: Assertion | null } | null>(() => {
-    if (typeof window === "undefined" || new URLSearchParams(window.location.search).get("focus") !== "latest") return null;
-    try {
-      const value = JSON.parse(sessionStorage.getItem("araxia.latestAuthorization") ?? "null") as { created?: CreatedAction; assertion?: Assertion | null } | null;
-      return value?.created ? { created: value.created, assertion: value.assertion ?? null } : null;
-    } catch {
-      return null;
-    }
-  });
-  const [lastAssertion, setLastAssertion] = useState<Assertion | null>(initialAuthorization?.assertion ?? null);
+  const initialAuthorization = useFocusAuthorization();
+  const loginLine = useLoginLine();
+  const [lastAssertion, setLastAssertion] = useState<Assertion | null>(null);
 
   const loadPasskeys = useCallback(async (user: string) => {
     const r = await api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(user)}`);
@@ -115,7 +144,7 @@ export function Console() {
             {`Araxia 16  tty.ble
 # sandbox. not a bank.
 
-${LOGIN}`}
+${loginLine}`}
           </pre>
 
           <TopBar
@@ -152,7 +181,7 @@ ${LOGIN}`}
                   <span className="comment ml-2 group-open:hidden">closed</span>
                 </summary>
                 <div className="mt-3">
-                  <AttackLab userId={userId} lastAssertion={lastAssertion} approveBlocker={blocker} />
+                  <AttackLab userId={userId} lastAssertion={lastAssertion ?? initialAuthorization?.assertion ?? null} approveBlocker={blocker} />
                 </div>
               </details>
               <ExecutionsTable executions={status?.executions ?? []} reachable={reachable} />

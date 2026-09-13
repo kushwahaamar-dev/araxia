@@ -61,24 +61,31 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion, initialA
   const [prompt, setPrompt] = useState("Pay this month's rent of $45 to RENT.");
   const [explanation, setExplanation] = useState<string | null>(null);
 
-  const [created, setCreated] = useState<CreatedAction | null>(initialAuthorization?.created ?? null);
+  const [draft, setDraft] = useState<CreatedAction | null>(null);
   const [decision, setDecision] = useState<Decision | null>(null);
-  const [assertion, setAssertion] = useState<Assertion | null>(initialAuthorization?.assertion ?? null);
+  const [localAssertion, setLocalAssertion] = useState<Assertion | null>(null);
   const [exec, setExec] = useState<{ status: number; body: unknown } | null>(null);
-  const [pipeline, setPipeline] = useState<PipelineState>(() =>
-    initialAuthorization?.assertion
-      ? { ...EMPTY_PIPELINE, stamps: { PROPOSED: Date.now(), APPROVED: Date.now(), ASSERTED: Date.now() } }
-      : EMPTY_PIPELINE,
-  );
+  const [pipeline, setPipeline] = useState<PipelineState>(EMPTY_PIPELINE);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Client-only focus payload must not seed useState (SSR would disagree).
+  const created = draft ?? initialAuthorization?.created ?? null;
+  const assertion = localAssertion ?? (draft ? null : (initialAuthorization?.assertion ?? null));
+  const activePipeline: PipelineState =
+    Object.keys(pipeline.stamps).length > 0
+      ? pipeline
+      : assertion && !draft
+        ? { ...EMPTY_PIPELINE, stamps: { PROPOSED: 0, APPROVED: 0, ASSERTED: 0 } }
+        : EMPTY_PIPELINE;
+
   const startFlow = (c: CreatedAction, note: string | null) => {
-    setCreated(c);
+    setDraft(c);
     setExplanation(note);
     setDecision(null);
-    setAssertion(null);
+    setLocalAssertion(null);
     setExec(null);
+    setError(null);
     setPipeline({ ...EMPTY_PIPELINE, stamps: { PROPOSED: Date.now() } });
   };
 
@@ -137,7 +144,7 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion, initialA
     setDecision(r.decision);
     if (r.decision.decision === "APPROVED") {
       const t = Date.now();
-      setAssertion(r.decision.assertion);
+      setLocalAssertion(r.decision.assertion);
       onAssertion(r.decision.assertion);
       setPipeline((p) => ({ ...p, stamps: { ...p.stamps, APPROVED: t, ASSERTED: t } }));
     }
@@ -335,7 +342,7 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion, initialA
         </>
       )}
 
-      {pipeline.stamps.PROPOSED !== undefined && created && <Pipeline state={pipeline} />}
+      {activePipeline.stamps.PROPOSED !== undefined && created && <Pipeline state={activePipeline} />}
       {exec && <JsonBlock value={exec.body} status={exec.status} />}
     </Panel>
   );

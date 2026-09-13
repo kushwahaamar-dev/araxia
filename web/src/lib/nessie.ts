@@ -1,7 +1,9 @@
 // Capital One Nessie sandbox. The live TransferCreate schema is
 // { transaction_date, status, amount, description } — no payee field.
-// Destination is bound in the description. This revision records
-// transfers; it does not post them onto account balances.
+// Destination is bound in the description. Nessie records transfers but
+// leaves seeded account.balance frozen (deposits/withdrawals/PUT balance
+// likewise do not move it). Displayed balances are adjusted in
+// nessieSettlements.ts from Araxia's confirmed executions.
 
 export const NESSIE_DEFAULT_BASE = "https://api.nessieisreal.com";
 const LEDGER_TTL_MS = 8_000;
@@ -37,6 +39,8 @@ export interface NessieLedger {
   transfers: NessieTransferView[];
   error: string | null;
   fetched_at: number;
+  /** True when displayed balances include Araxia's confirmed settlements (Nessie leaves seeded balances frozen). */
+  balances_settled?: boolean;
 }
 
 type FetchImpl = typeof fetch;

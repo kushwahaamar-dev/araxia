@@ -59,7 +59,11 @@ export function NessieLedger({ ledger }: { ledger: StatusResponse["nessie"] | un
           ))}
         </ul>
       )}
-      <p className="comment mt-2">small one settles on nessie. balances do not move on this revision.</p>
+      <p className="comment mt-2">
+        {ledger.balances_settled
+          ? "seeded nessie balance is frozen; display applies araxia's confirmed settlements."
+          : "small one settles on nessie. seeded balances stay put until a confirmed settlement lands."}
+      </p>
     </Panel>
   );
 }

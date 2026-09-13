@@ -314,7 +314,11 @@ export function BankingDemo() {
           <div className="balance">
             <span>Nessie balance</span>
             <strong>{nessieBalance}</strong>
-            <small>Sandbox ledger · seeded balances do not move</small>
+            <small>
+              {status?.nessie?.balances_settled
+                ? "Seeded Nessie balance is frozen · display applies confirmed Araxia settlements"
+                : "Sandbox ledger · seeded balances stay put until a confirmed settlement lands"}
+            </small>
             <span style={{ marginTop: 14 }}>Solana balance</span>
             <strong style={{ fontSize: 22 }}>{solLamports == null ? "—" : formatSol(solLamports)}</strong>
             <small>Devnet · updates after each on-chain send</small>
@@ -693,7 +697,7 @@ export function BankingDemo() {
             <div className="disclaimer">
               <strong>Demo account</strong>
               <p>
-                Small One is fictional. Nessie records transfers but seeded balances stay put. Solana sends real devnet lamports; every signature opens on Solscan.
+                Small One is fictional. Nessie records transfers but leaves seeded balances frozen; Araxia adjusts the displayed balance from confirmed settlements. Solana sends real devnet lamports; every signature opens on Solscan.
               </p>
             </div>
           </aside>

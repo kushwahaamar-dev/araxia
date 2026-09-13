@@ -7,6 +7,7 @@ import { errorResponse } from "@/lib/http";
 import { getIssuer } from "@/lib/issuer";
 import { getFitbitSnapshot } from "@/lib/fitbit";
 import { getNessieLedger } from "@/lib/nessie";
+import { applyNessieSettlements } from "@/lib/nessieSettlements";
 import { listPasskeys } from "@/lib/passkeys";
 import { getKyc, isPersonaApproved, personaConfigured } from "@/lib/persona";
 import { assuranceFor, evidenceIsFresh, POLICY_HASH } from "@/lib/policy";
@@ -19,7 +20,7 @@ export async function GET(req: Request): Promise<Response> {
     const now = Date.now();
     const evidence = latestEvidence(user);
     const issuer = getIssuer();
-    const nessie = await getNessieLedger();
+    const nessie = applyNessieSettlements(await getNessieLedger());
     const wearer = getWearerSession();
     if (!process.env.VITEST) {
       const sqlite = getDb();

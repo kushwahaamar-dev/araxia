@@ -1,5 +1,5 @@
-import { Console } from "@/components/Console";
+import { HomeClient } from "./HomeClient";
 
 export default function Home() {
-  return <Console />;
+  return <HomeClient />;
 }

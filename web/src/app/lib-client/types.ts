@@ -103,6 +103,7 @@ export interface StatusResponse {
     }>;
     error: string | null;
     fetched_at: number;
+    balances_settled?: boolean;
   };
   fitbit?: {
     configured: boolean;
