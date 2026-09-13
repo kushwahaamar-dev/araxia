@@ -3,10 +3,11 @@
 // nothing here ever issues a second provider call.
 
 import { verifyAssertion, type Assertion } from "@araxia/verify";
-import { claimAssertion, finishExecution, getExecutionByNonce, insertExecution, logEvent } from "../db";
+import { claimAssertion, finishExecution, getExecutionByNonce, insertExecution, logEvent, logSecurity } from "../db";
 import { latestEvidence } from "../evidence";
 import { getIssuer } from "../issuer";
 import { evidenceIsFresh } from "../policy";
+import { wearerHalted } from "../wearers";
 import type { ExecOutcome, Executor } from "./types";
 
 export type ExecResult =
@@ -31,18 +32,27 @@ export async function runExecution(assertion: Assertion, executor: Executor, cla
   });
   if (!verdict.ok) {
     logEvent("execution.denied", { nonce: assertion.nonce, step: "verify", reason: verdict.reason });
+    logSecurity("execution.denied", { nonce: assertion.nonce, step: "verify", reason: verdict.reason });
     return denied("verify", verdict.reason);
+  }
+
+  if (wearerHalted()) {
+    logEvent("execution.denied", { nonce: assertion.nonce, step: "presence", reason: "wearer changed" });
+    logSecurity("execution.denied", { nonce: assertion.nonce, step: "presence", reason: "wearer changed" });
+    return denied("presence", "user has been changed; switch wearer before executing");
   }
 
   const ev = latestEvidence(assertion.sub);
   if (!evidenceIsFresh(ev, Date.now())) {
     const reason = ev ? "presence evidence older than 3 s at execution" : "no fresh presence evidence";
     logEvent("execution.denied", { nonce: assertion.nonce, step: "presence", reason });
+    logSecurity("execution.denied", { nonce: assertion.nonce, step: "presence", reason });
     return denied("presence", reason);
   }
   if (ev.presence !== "READY") {
     const reason = `presence ${ev.presence} at execution`;
     logEvent("execution.denied", { nonce: assertion.nonce, step: "presence", reason });
+    logSecurity("execution.denied", { nonce: assertion.nonce, step: "presence", reason });
     return denied("presence", reason);
   }
 
@@ -50,6 +60,7 @@ export async function runExecution(assertion: Assertion, executor: Executor, cla
     const prior = getExecutionByNonce(assertion.nonce);
     const reason = prior ? `nonce already claimed (execution ${prior.id}, ${prior.status})` : "nonce already claimed";
     logEvent("execution.denied", { nonce: assertion.nonce, step: "claim", reason });
+    logSecurity("execution.denied", { nonce: assertion.nonce, step: "claim", reason });
     return denied("claim", reason);
   }
 

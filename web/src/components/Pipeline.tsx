@@ -1,5 +1,6 @@
 import { clock } from "@/app/lib-client/format";
-import { FILL, TEXT, toneFor, type Tone } from "./ui";
+import { looksLikeSolanaSig } from "@/app/lib-client/solscan";
+import { FILL, SolscanLink, TEXT, toneFor, type Tone } from "./ui";
 
 export type Terminal = "CONFIRMED" | "FAILED" | "UNCERTAIN" | "DENIED";
 export type StageName = "PROPOSED" | "APPROVED" | "ASSERTED" | "SENT";
@@ -48,7 +49,15 @@ export function Pipeline({ state }: { state: PipelineState }) {
           {state.providerRef && (
             <>
               <dt>provider_ref</dt>
-              <dd>{state.providerRef}</dd>
+              <dd>
+                {looksLikeSolanaSig(state.providerRef) ? (
+                  <SolscanLink kind="tx" id={state.providerRef}>
+                    {state.providerRef}
+                  </SolscanLink>
+                ) : (
+                  state.providerRef
+                )}
+              </dd>
             </>
           )}
           {state.note && (

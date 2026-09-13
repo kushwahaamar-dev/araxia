@@ -1,6 +1,7 @@
 import { clock, dollars, prefix } from "@/app/lib-client/format";
+import { looksLikeSolanaSig } from "@/app/lib-client/solscan";
 import type { ExecutionRow } from "@/app/lib-client/types";
-import { Panel, StateBadge } from "./ui";
+import { Panel, SolscanLink, StateBadge } from "./ui";
 
 export function ExecutionsTable({
   executions,
@@ -42,7 +43,13 @@ export function ExecutionsTable({
                     {dollars(row.action.amount_minor, row.action.ccy)}
                   </td>
                   <td className="border-b border-line/60 py-1.5 pr-3" title={row.provider_ref ?? undefined}>
-                    {prefix(row.provider_ref, 16)}
+                    {row.provider_ref && (row.rail === "solana" || looksLikeSolanaSig(row.provider_ref)) ? (
+                      <SolscanLink kind="tx" id={row.provider_ref}>
+                        {prefix(row.provider_ref, 16)}
+                      </SolscanLink>
+                    ) : (
+                      prefix(row.provider_ref, 16)
+                    )}
                   </td>
                   <td className="border-b border-line/60 py-1.5 text-dim">
                     {clock(row.started_at)}

@@ -73,6 +73,85 @@ export interface StatusResponse {
     hosted_url?: string | null;
   };
   rails?: { nessie: boolean; solana: string | null };
+  nessie?: {
+    configured: boolean;
+    reachable: boolean;
+    sandbox: true;
+    base_url: string;
+    source: {
+      id: string;
+      label: string;
+      role: "source" | "payee";
+      type: string | null;
+      nickname: string | null;
+      balance_minor: number | null;
+    } | null;
+    payees: Array<{
+      id: string;
+      label: string;
+      role: "source" | "payee";
+      type: string | null;
+      nickname: string | null;
+      balance_minor: number | null;
+    }>;
+    transfers: Array<{
+      id: string;
+      status: string;
+      amount_minor: number | null;
+      description: string | null;
+      transaction_date: string | null;
+    }>;
+    error: string | null;
+    fetched_at: number;
+  };
+  fitbit?: {
+    configured: boolean;
+    authorized: boolean;
+    reachable: boolean;
+    source: "google-health-api";
+    live_gate: "ble-packets";
+    display_name: string | null;
+    live_ble_bpm: number | null;
+    cloud_resting_bpm: number | null;
+    cloud_latest_intraday_bpm: number | null;
+    metrics: Array<{ key: string; label: string; available: boolean; value: string | null; note: string }>;
+    error: string | null;
+    fetched_at: number;
+  };
+  tiger?: {
+    configured: boolean;
+    reachable: boolean;
+    source: "tigerdata";
+    users: number;
+    passkeys: number;
+    evidence: number;
+    executions: number;
+    events: number;
+    health: number;
+    solana: number;
+    recent: Array<{ ts: number; kind: string }>;
+    error: string | null;
+    fetched_at: number;
+  };
+  solana?: {
+    configured: boolean;
+    reachable: boolean;
+    address: string | null;
+    lamports: number | null;
+    airdrop: string | null;
+    explorer: string | null;
+    payee: string | null;
+    last_txs: Array<{ signature: string; nonce: string; dst: string; lamports: number; confirmed_at: number }>;
+    error: string | null;
+    fetched_at: number;
+  };
+  wearer?: {
+    active_user: string;
+    guessed_user: string;
+    halt: boolean;
+    last_median: number;
+    team: Array<{ user_id: string; label: string; kyc: string; ready: boolean }>;
+  };
 }
 
 export interface Passkey {

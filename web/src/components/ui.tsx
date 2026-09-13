@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
-import { pretty } from "@/app/lib-client/format";
+"use client";
+
+import { useState, type ReactNode } from "react";
+import { pretty, prefix } from "@/app/lib-client/format";
+import { solscanAccount, solscanTx } from "@/app/lib-client/solscan";
 
 export type Tone = "ok" | "warn" | "hot" | "bad" | "off" | "neutral";
 
@@ -19,6 +22,13 @@ const TONE_BY_STATE: Record<string, Tone> = {
   FAILED: "bad",
   UNCERTAIN: "hot",
   SENT: "warn",
+  COMPLETED: "ok",
+  PENDING: "warn",
+  LIVE: "ok",
+  DOWN: "bad",
+  UNREACHABLE: "bad",
+  SOURCE: "ok",
+  PAYEE: "neutral",
   AAL3: "ok",
   AAL2: "ok",
   AAL1: "warn",
@@ -61,7 +71,7 @@ export function StateBadge({ value, tone, className = "" }: { value: string; ton
   const t = tone ?? toneFor(value);
   return (
     <span
-      className={`inline-flex items-center rounded-sm border px-1.5 py-px font-mono text-[11px] font-semibold tracking-wide ${BADGE[t]} ${className}`}
+      className={`inline-flex items-center rounded-full border px-2 py-px font-mono text-[11px] font-semibold tracking-wide ${BADGE[t]} ${className}`}
     >
       {value}
     </span>
@@ -106,7 +116,59 @@ export function JsonBlock({ value, status, className = "" }: { value: unknown; s
 }
 
 export function Notice({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
-  return <p className={`rounded-sm border border-line px-2 py-1 text-[12px] ${TEXT[tone]}`}>{children}</p>;
+  return <p className={`rounded-xl border border-line px-3 py-2 text-[12px] ${TEXT[tone]}`}>{children}</p>;
+}
+
+export function Copyable({
+  value,
+  children,
+  label,
+}: {
+  value: string;
+  children: ReactNode;
+  label?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="inline-flex min-w-0 items-center gap-1 font-mono text-inherit hover:text-accent"
+      title={copied ? "copied" : label ?? "copy"}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1200);
+        } catch {
+          setCopied(false);
+        }
+      }}
+    >
+      <span className="min-w-0 truncate">{children}</span>
+      <span className="text-[10px] text-dim">{copied ? "copied" : ""}</span>
+    </button>
+  );
+}
+
+export function SolscanLink({
+  kind,
+  id,
+  children,
+}: {
+  kind: "tx" | "account";
+  id: string;
+  children?: ReactNode;
+}) {
+  return (
+    <a
+      className="inline-flex items-center underline decoration-dotted underline-offset-2 hover:text-accent"
+      href={kind === "tx" ? solscanTx(id) : solscanAccount(id)}
+      rel="noreferrer"
+      target="_blank"
+    >
+      {children ?? prefix(id, 8)}
+    </a>
+  );
 }
 
 export function KV({ k, children }: { k: string; children: ReactNode }) {

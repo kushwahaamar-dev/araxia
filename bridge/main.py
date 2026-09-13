@@ -29,6 +29,7 @@ from bridge.envelope import ENVELOPE_VERSION, BridgeSigner, EvidencePayload
 from bridge.hrs import DecodeError, decode
 from bridge.identity import WINDOW_S, DriftEvaluator, WearerModel
 from bridge.presence import PresenceTracker
+from bridge.wearers import HandoffTracker
 
 HR_SERVICE = "0000180d-0000-1000-8000-00805f9b34fb"
 HR_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb"
@@ -134,6 +135,13 @@ async def run(args: argparse.Namespace) -> int:
     seq = 0
     next_tick = time.monotonic()
     stream_done = False
+    handoff = HandoffTracker()
+
+    bpm_log = Path(args.log_bpm).expanduser() if args.log_bpm else None
+    bpm_fh = None
+    if bpm_log is not None:
+        bpm_log.parent.mkdir(parents=True, exist_ok=True)
+        bpm_fh = bpm_log.open("w")
 
     async def consume() -> None:
         nonlocal stream_done, window_start
@@ -149,6 +157,9 @@ async def run(args: argparse.Namespace) -> int:
             tracker.observe(sample.bpm, sample.t)
             if 30 <= sample.bpm <= 220:
                 window.append((sample.t, sample.bpm))
+            if bpm_fh is not None:
+                bpm_fh.write(json.dumps({"t": round(sample.t, 3), "bpm": sample.bpm}) + "\n")
+                bpm_fh.flush()
 
     consumer = asyncio.create_task(consume())
     try:
@@ -181,15 +192,26 @@ async def run(args: argparse.Namespace) -> int:
                 drift=drift.state.value,
                 model_version=model.model_version if model else "none",
             )
-            env = signer.sign(payload)
+            claimed, guessed, changed, median = handoff.update(window, stats.presence.value)
+            env = signer.sign(
+                payload,
+                extra={
+                    "claimed_user": claimed,
+                    "guessed_user": guessed,
+                    "wearer_changed": changed,
+                    "window_median_bpm": median,
+                },
+            )
             if args.dry_run:
                 status = "dry-run"
             else:
                 status = await asyncio.to_thread(post_envelope, args.service + "/api/evidence", env.to_json())
+            who = guessed or "unknown"
             line = (
                 f"[{seq:5d}] {stats.presence.value:<12} drift={drift.state.value:<13} "
                 f"age={stats.latest_age_ms}ms distinct30={stats.distinct_values_30s} "
-                f"frozen={stats.frozen_for_ms // 1000}s -> {status}"
+                f"frozen={stats.frozen_for_ms // 1000}s wearer={who}"
+                f"{' CHANGED' if changed else ''} -> {status}"
             )
             print(line, flush=True)
             next_tick += 1.0
@@ -198,6 +220,8 @@ async def run(args: argparse.Namespace) -> int:
         consumer.cancel()
         with contextlib.suppress(asyncio.CancelledError):
             await consumer
+        if bpm_fh is not None:
+            bpm_fh.close()
     return 0
 
 
@@ -243,6 +267,7 @@ def main() -> int:
     p_run.add_argument("--speed", type=float, default=1.0)
     p_run.add_argument("--dry-run", action="store_true", help="print envelopes, do not POST")
     p_run.add_argument("--register", action="store_true", help="register this bridge key with the service")
+    p_run.add_argument("--log-bpm", default="", help="append raw BPM locally to this JSONL; never posted")
 
     p_enroll = sub.add_parser("enroll")
     p_enroll.add_argument("--address", required=True)

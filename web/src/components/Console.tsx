@@ -7,14 +7,20 @@ import { useNow } from "@/app/lib-client/useNow";
 import { ActionPanel } from "./ActionPanel";
 import { AttackLab } from "./AttackLab";
 import { ExecutionsTable } from "./ExecutionsTable";
+import { FitbitPanel } from "./FitbitPanel";
+import { NessieLedger } from "./NessieLedger";
+import { SolanaPanel } from "./SolanaPanel";
+import { TigerPanel } from "./TigerPanel";
 import { PresencePanel, type PollSample } from "./PresencePanel";
 import { TopBar } from "./TopBar";
 
 const STATUS_POLL_MS = 1000;
 const HISTORY_LEN = 60;
+const YEAR = new Date().getFullYear();
 
 function approveBlocker(status: StatusResponse | null, reachable: boolean, hasPasskey: boolean): string | null {
   if (!reachable) return "service unreachable";
+  if (status?.wearer?.halt) return "user has been changed; switch wearer first";
   if (!hasPasskey) return "no passkey registered for this user";
   const ev = status?.evidence ?? null;
   if (!ev) return "no wearable evidence yet";
@@ -30,9 +36,10 @@ export function Console() {
   const [history, setHistory] = useState<PollSample[]>([]);
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [lastAssertion, setLastAssertion] = useState<Assertion | null>(null);
+  const [userId, setUserId] = useState(DEMO_USER);
 
-  const loadPasskeys = useCallback(async () => {
-    const r = await api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(DEMO_USER)}`);
+  const loadPasskeys = useCallback(async (user: string) => {
+    const r = await api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(user)}`);
     if (r.status >= 200 && r.status < 300 && r.body && Array.isArray(r.body.passkeys)) setPasskeys(r.body.passkeys);
   }, []);
 
@@ -42,8 +49,8 @@ export function Console() {
 
     const tick = async () => {
       const [r, pk] = await Promise.all([
-        api<StatusResponse>(`/api/status?user=${encodeURIComponent(DEMO_USER)}`),
-        api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(DEMO_USER)}`),
+        api<StatusResponse>(`/api/status?user=${encodeURIComponent(userId)}`),
+        api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(userId)}`),
       ]);
       if (cancelled) return;
       let presence: Presence | "NONE" | "DOWN" = "DOWN";
@@ -51,6 +58,9 @@ export function Console() {
         setStatus(r.body);
         setReachable(true);
         presence = r.body.evidence?.presence ?? "NONE";
+        if (r.body.wearer?.active_user && r.body.wearer.active_user !== userId && !r.body.wearer.halt) {
+          setUserId(r.body.wearer.active_user);
+        }
       } else {
         setReachable(false);
       }
@@ -66,34 +76,60 @@ export function Console() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, []);
+  }, [userId]);
 
   const hasPasskey = passkeys.length > 0;
   const blocker = approveBlocker(status, reachable, hasPasskey);
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-3 p-3">
-      <TopBar
-        userId={DEMO_USER}
-        reachable={reachable}
-        issuerKid={status?.issuer.kid ?? null}
-        policyHash={status?.policy_hash ?? null}
-        passkeys={passkeys}
-        kyc={status?.kyc}
-        rails={status?.rails}
-        onPasskeysChanged={loadPasskeys}
-      />
-      <main className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_minmax(0,1fr)_380px]">
-        <PresencePanel status={status} reachable={reachable} history={history} now={now} />
-        <ActionPanel
-          userId={DEMO_USER}
-          now={now}
-          approveBlocker={blocker}
-          onAssertion={setLastAssertion}
+    <div className="araxia-noise relative min-h-screen overflow-x-hidden">
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.04)_1px,transparent_1px)] bg-[size:88px_88px] opacity-30" />
+      <div className="araxia-orb pointer-events-none fixed -top-80 -left-72 size-[46rem] rounded-full bg-[radial-gradient(circle,rgba(216,185,138,0.11),transparent_62%)] blur-3xl" />
+      <div className="araxia-orb-alt pointer-events-none fixed -right-72 -bottom-80 size-[42rem] rounded-full bg-[radial-gradient(circle,rgba(159,183,154,0.09),transparent_64%)] blur-3xl" />
+
+      <div className="relative z-10 mx-auto flex min-h-screen w-full min-w-0 max-w-[1440px] flex-col gap-3 p-3 pb-8">
+        <TopBar
+          userId={userId}
+          reachable={reachable}
+          issuerKid={status?.issuer.kid ?? null}
+          policyHash={status?.policy_hash ?? null}
+          passkeys={passkeys}
+          kyc={status?.kyc}
+          rails={status?.rails}
+          nessie={status?.nessie}
+          wearer={status?.wearer}
+          onPasskeysChanged={() => loadPasskeys(userId)}
+          onUserSwitched={async (next) => {
+            setUserId(next);
+            await loadPasskeys(next);
+          }}
         />
-        <AttackLab userId={DEMO_USER} lastAssertion={lastAssertion} approveBlocker={blocker} />
-      </main>
-      <ExecutionsTable executions={status?.executions ?? []} reachable={reachable} />
+        <main className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(0,380px)]">
+          <PresencePanel status={status} reachable={reachable} history={history} now={now} />
+          <ActionPanel userId={userId} now={now} approveBlocker={blocker} onAssertion={setLastAssertion} />
+          <AttackLab userId={userId} lastAssertion={lastAssertion} approveBlocker={blocker} />
+        </main>
+        <FitbitPanel fitbit={status?.fitbit} liveBleBpm={status?.wearer?.last_median ?? status?.fitbit?.live_ble_bpm} />
+        <NessieLedger ledger={status?.nessie} />
+        <SolanaPanel solana={status?.solana} />
+        <TigerPanel tiger={status?.tiger} />
+        <ExecutionsTable executions={status?.executions ?? []} reachable={reachable} />
+
+        <footer className="flex flex-col gap-2 border-t border-line px-1 pt-4 text-[11px] text-dim sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-center gap-2">
+            <img src="/logo-white.png" alt="" className="h-3.5 w-auto opacity-70" />
+            <span>© {YEAR}. Capital One Nessie sandbox — not a bank, not advice.</span>
+          </p>
+          <p className="flex flex-wrap gap-x-4 gap-y-1">
+            <a className="hover:text-accent" href="mailto:amkushwa@ttu.edu">
+              amkushwa@ttu.edu
+            </a>
+            <a className="hover:text-accent" href="https://github.com/kushwahaamar-dev/araxia" rel="noreferrer">
+              source
+            </a>
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

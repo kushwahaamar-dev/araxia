@@ -13,6 +13,7 @@ import {
   type RegistrationResponseJSON,
 } from "@simplewebauthn/server";
 import { getDb, nowMs } from "./db";
+import { recordTigerPasskey } from "./tiger";
 
 export const RP_ID = process.env.ARAXIA_RP_ID ?? "localhost";
 export const ORIGIN = process.env.ARAXIA_ORIGIN ?? "http://localhost:3000";
@@ -99,9 +100,20 @@ export async function verifyRegistration(userId: string, response: RegistrationR
   db.transaction(() => {
     const used = db.prepare("UPDATE challenges SET used_at = ? WHERE id = ? AND used_at IS NULL").run(nowMs(), row.id);
     if (used.changes !== 1) throw new Error("challenge already used");
+    const created = nowMs();
+    const publicKey = Buffer.from(credential.publicKey);
+    const transports = JSON.stringify(credential.transports ?? []);
     db.prepare(
       "INSERT INTO passkeys (cred_id, user_id, public_key, counter, transports, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    ).run(credential.id, userId, Buffer.from(credential.publicKey), credential.counter, JSON.stringify(credential.transports ?? []), nowMs());
+    ).run(credential.id, userId, publicKey, credential.counter, transports, created);
+    recordTigerPasskey({
+      cred_id: credential.id,
+      user_id: userId,
+      public_key: publicKey,
+      counter: credential.counter,
+      transports,
+      created_at: created,
+    });
   })();
 
   return { cred_id: credential.id };

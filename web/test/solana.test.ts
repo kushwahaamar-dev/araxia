@@ -1,7 +1,19 @@
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { CanonicalAction } from "@araxia/verify";
 import { executorFor } from "../src/lib/executors/pick";
-import { solanaExecutor } from "../src/lib/executors/solana";
+import { solscanAccount, solscanTx } from "../src/app/lib-client/solscan";
+import { getSolanaSnapshot, solanaExecutor } from "../src/lib/executors/solana";
+
+function loadLocalSolana(): void {
+  const file = new URL("../.env.local", import.meta.url);
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    const m = /^(SOLANA_KEYPAIR|SOLANA_RPC|SOLANA_PAYEE)=(.*)$/.exec(line);
+    if (!m?.[1] || !m[2] || process.env[m[1]]) continue;
+    process.env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
+  }
+}
 
 const action: CanonicalAction = {
   v: 1,
@@ -17,13 +29,20 @@ const action: CanonicalAction = {
 };
 
 describe("solana executor", () => {
+  it("points every address and signature at Solscan devnet", () => {
+    expect(solscanAccount("Cxt17a9cVjuztfPV3vcBKuBNEDj9f6J4kth9vRdfbW1S")).toBe(
+      "https://solscan.io/account/Cxt17a9cVjuztfPV3vcBKuBNEDj9f6J4kth9vRdfbW1S?cluster=devnet",
+    );
+    expect(solscanTx("sig111")).toBe("https://solscan.io/tx/sig111?cluster=devnet");
+  });
+
   it("confirms with an explorer link when send succeeds", async () => {
     process.env.SOLANA_KEYPAIR = "/tmp/unused.json";
     const ex = solanaExecutor(async () => ({ signature: "sig111" }));
     const out = await ex.execute(action, "an_1");
     expect(out.status).toBe("CONFIRMED");
     expect(out.providerRef).toBe("sig111");
-    expect(JSON.stringify(out.response)).toContain("explorer.solana.com");
+    expect(JSON.stringify(out.response)).toContain("solscan.io/tx/sig111");
   });
 
   it("fails closed without a keypair and never sends", async () => {
@@ -54,4 +73,17 @@ describe("solana executor", () => {
     expect(out.status).toBe("FAILED");
     expect(n).toBe(1);
   });
+
+  it("reads a live devnet balance when a keypair is configured", async () => {
+    delete process.env.SOLANA_KEYPAIR;
+    loadLocalSolana();
+    if (!process.env.SOLANA_KEYPAIR) return;
+    process.env.SOLANA_LIVE = "1";
+    const snap = await getSolanaSnapshot(Date.now() + 20_000);
+    expect(snap.configured).toBe(true);
+    expect(snap.reachable).toBe(true);
+    expect(snap.address).toBeTruthy();
+    expect(snap.lamports).toBeGreaterThanOrEqual(0);
+    expect(snap.error).toBeNull();
+  }, 30_000);
 });

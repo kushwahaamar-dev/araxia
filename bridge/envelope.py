@@ -85,8 +85,11 @@ class BridgeSigner:
     def public_key_hex(self) -> str:
         return bytes(self._key.verify_key).hex()
 
-    def sign(self, payload: EvidencePayload) -> SignedEnvelope:
-        raw = canonical_bytes(asdict(payload))
+    def sign(self, payload: EvidencePayload, extra: dict[str, Any] | None = None) -> SignedEnvelope:
+        obj = asdict(payload)
+        if extra:
+            obj.update(extra)
+        raw = canonical_bytes(obj)
         sig = self._key.sign(raw).signature
         return SignedEnvelope(kid=self.kid, payload=raw.decode("utf-8"), sig=base64.b64encode(sig).decode())
 

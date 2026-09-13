@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { api, errorText, isApiError } from "@/app/lib-client/api";
 import { createAction, runApproval } from "@/app/lib-client/flows";
 import { dollars, secondsUntil } from "@/app/lib-client/format";
+import { looksLikeSolanaAddress } from "@/app/lib-client/solscan";
 import type {
   Assertion,
   CreatedAction,
@@ -14,7 +15,14 @@ import type {
 } from "@/app/lib-client/types";
 import { AssertionPanel } from "./AssertionPanel";
 import { Pipeline, type PipelineState } from "./Pipeline";
-import { JsonBlock, KV, Notice, Panel, StateBadge, TEXT, toneFor } from "./ui";
+import { JsonBlock, KV, Notice, Panel, SolscanLink, StateBadge, TEXT, toneFor } from "./ui";
+
+function chainField(aud: string, value: string) {
+  if (aud === "solana-devnet" && looksLikeSolanaAddress(value)) {
+    return <SolscanLink kind="account" id={value}>{value}</SolscanLink>;
+  }
+  return value;
+}
 
 interface Props {
   userId: string;
@@ -217,15 +225,15 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
           </label>
           <label className="flex flex-col gap-px text-[11px] text-dim">
             payee
-            <input className="field font-mono" value={payee} onChange={(e) => setPayee(e.target.value)} required />
+            <input className="field font-mono" value={payee} onChange={(e) => setPayee(e.target.value)} placeholder="RENT or SAVINGS" required />
           </label>
           <label className="flex flex-col gap-px text-[11px] text-dim">
             {op === "solana.transfer" ? "lamports" : "amount (USD)"}
-            <input className="field font-mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+            <input className="field font-mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="45.00" required />
           </label>
           <label className="flex flex-col gap-px text-[11px] text-dim">
             reason
-            <input className="field font-mono" value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={64} />
+            <input className="field font-mono" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="September rent" required maxLength={64} />
           </label>
           <button type="submit" className="btn btn-primary self-end" disabled={busy !== null}>
             {busy === "create" ? "Creating…" : "Create action"}
@@ -235,7 +243,13 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
         <form id="tabpanel-gemini" role="tabpanel" aria-labelledby="tab-gemini" className="flex flex-col gap-2" onSubmit={onPropose}>
           <label className="flex flex-col gap-px text-[11px] text-dim">
             Ask the agent
-            <textarea className="field min-h-16 resize-y" value={prompt} onChange={(e) => setPrompt(e.target.value)} required />
+            <textarea
+              className="field min-h-16 resize-y"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Pay this month's rent of $45 to RENT."
+              required
+            />
           </label>
           <div className="flex items-center gap-3">
             <button type="submit" className="btn btn-primary" disabled={busy !== null}>
@@ -264,8 +278,8 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4">
             <KV k="op">{created.action.op}</KV>
             <KV k="aud">{created.action.aud}</KV>
-            <KV k="src">{created.action.src}</KV>
-            <KV k="dst">{created.action.dst}</KV>
+            <KV k="src">{chainField(created.action.aud, created.action.src)}</KV>
+            <KV k="dst">{chainField(created.action.aud, created.action.dst)}</KV>
             <KV k="amount_minor">{created.action.amount_minor}</KV>
             <KV k="amount">{dollars(created.action.amount_minor, created.action.ccy)}</KV>
             <KV k="ccy">{created.action.ccy}</KV>

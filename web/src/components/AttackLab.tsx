@@ -135,13 +135,31 @@ export function AttackLab({ userId, lastAssertion, approveBlocker }: Props) {
       </label>
       {pasteInvalid && <p className={`text-[12px] ${TEXT.bad}`}>pasted JSON is not an assertion</p>}
       <div className="grid grid-cols-1 gap-1.5">
-        <button type="button" className="btn btn-danger" disabled={!hasSource || busy !== null} onClick={mutateAmount}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={!hasSource || busy !== null}
+          title={!hasSource ? "approve or paste an assertion first" : "tamper amount and hit the real executor"}
+          onClick={mutateAmount}
+        >
           {busy === "mutate amount ×10" ? "…" : "Mutate amount ×10 and execute"}
         </button>
-        <button type="button" className="btn btn-danger" disabled={!hasSource || busy !== null} onClick={mutatePayee}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={!hasSource || busy !== null}
+          title={!hasSource ? "approve or paste an assertion first" : "swap the payee and hit the real executor"}
+          onClick={mutatePayee}
+        >
           {busy === "change payee" ? "…" : "Change payee and execute"}
         </button>
-        <button type="button" className="btn btn-danger" disabled={!hasSource || busy !== null} onClick={replay}>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={!hasSource || busy !== null}
+          title={!hasSource ? "approve or paste an assertion first" : "replay the same assertion"}
+          onClick={replay}
+        >
           {busy === "replay" ? "…" : "Replay original"}
         </button>
         <button type="button" className="btn" disabled={busy !== null} onClick={staleAttempt}>

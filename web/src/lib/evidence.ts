@@ -3,7 +3,9 @@
 
 import { sha256Hex, verifyEnvelope, type SignedEnvelope } from "@araxia/verify";
 import { getDb, logEvent, nowMs } from "./db";
+import { recordTigerEvidence } from "./tiger";
 import type { Drift, EvidenceView, Presence } from "./policy";
+import { applyWearerHint, getWearerSession } from "./wearers";
 
 export const MAX_SKEW_MS = 5000;
 
@@ -72,6 +74,14 @@ export function ingestEnvelope(envelope: SignedEnvelope, receivedAt = nowMs()): 
       );
       db.prepare("UPDATE bridges SET current_session = ? WHERE bridge_id = ?").run(sessionId, bridge.bridge_id);
     }
+    if ("wearer_changed" in p || "guessed_user" in p) {
+      applyWearerHint({
+        guessed_user: typeof p.guessed_user === "string" ? p.guessed_user : "",
+        wearer_changed: typeof p.wearer_changed === "number" ? p.wearer_changed : 0,
+        window_median_bpm: typeof p.window_median_bpm === "number" ? p.window_median_bpm : 0,
+      });
+    }
+    const dest = "wearer_changed" in p || "guessed_user" in p ? getWearerSession().active_user : bridge.user_id;
     const digest = sha256Hex(envelope.payload);
     const view: EvidenceView = {
       digest,
@@ -88,7 +98,7 @@ export function ingestEnvelope(envelope: SignedEnvelope, receivedAt = nowMs()): 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       digest,
-      bridge.user_id,
+      dest,
       sessionId,
       seq,
       receivedAt,
@@ -98,6 +108,18 @@ export function ingestEnvelope(envelope: SignedEnvelope, receivedAt = nowMs()): 
       view.frozen_for_ms,
       view.distinct_values_30s,
     );
+    recordTigerEvidence({
+      digest,
+      user_id: dest,
+      session_id: sessionId,
+      seq,
+      received_at: receivedAt,
+      presence: view.presence,
+      drift: view.drift,
+      latest_age_ms: view.latest_age_ms,
+      frozen_for_ms: view.frozen_for_ms,
+      distinct_values_30s: view.distinct_values_30s,
+    });
     return { ok: true, userId: bridge.user_id, view };
   });
 
@@ -114,6 +136,46 @@ export function latestEvidence(userId: string): EvidenceView | null {
     )
     .get(userId) as EvidenceView | undefined;
   return row ?? null;
+}
+
+export function copyLatestEvidenceTo(userId: string): void {
+  const row = getDb()
+    .prepare(
+      `SELECT digest, session_id, seq, received_at, presence, drift, latest_age_ms, frozen_for_ms, distinct_values_30s
+       FROM evidence ORDER BY received_at DESC, seq DESC LIMIT 1`,
+    )
+    .get() as
+    | {
+        digest: string;
+        session_id: string;
+        seq: number;
+        received_at: number;
+        presence: string;
+        drift: string;
+        latest_age_ms: number;
+        frozen_for_ms: number;
+        distinct_values_30s: number;
+      }
+    | undefined;
+  if (!row) return;
+  getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO evidence
+        (digest, user_id, session_id, seq, received_at, presence, drift, latest_age_ms, frozen_for_ms, distinct_values_30s)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      `${row.digest}:${userId}`,
+      userId,
+      row.session_id,
+      row.seq,
+      row.received_at,
+      row.presence,
+      row.drift,
+      row.latest_age_ms,
+      row.frozen_for_ms,
+      row.distinct_values_30s,
+    );
 }
 
 export function evidenceByDigest(digest: string): EvidenceView | null {

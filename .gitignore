@@ -24,3 +24,8 @@ bugreport*/
 node_modules/
 .next/
 web/data/
+
+# OAuth client downloads and local secrets
+.env.local
+client_secret*.json
+*.apps.googleusercontent.com.json

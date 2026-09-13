@@ -1,8 +1,11 @@
 // Authoritative store. One SQLite file, WAL, every claim inside a transaction.
 
 import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { chmodSync, mkdirSync } from "node:fs";
 import path from "node:path";
+function replica(): Promise<typeof import("./tiger")> {
+  return import("./tiger");
+}
 
 export type ExecutionStatus = "SENT" | "CONFIRMED" | "FAILED" | "UNCERTAIN";
 
@@ -98,6 +101,15 @@ CREATE TABLE IF NOT EXISTS kyc (
   hosted_url TEXT,
   updated_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS wearer_session (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  active_user TEXT NOT NULL,
+  guessed_user TEXT NOT NULL DEFAULT '',
+  halt INTEGER NOT NULL DEFAULT 0,
+  last_median INTEGER NOT NULL DEFAULT 0,
+  streak INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL
+);
 `;
 
 let db: Database.Database | null = null;
@@ -107,6 +119,11 @@ export function getDb(): Database.Database {
   const file = process.env.ARAXIA_DB ?? path.join(process.cwd(), "data", "araxia.db");
   mkdirSync(path.dirname(file), { recursive: true });
   db = new Database(file);
+  try {
+    chmodSync(file, 0o600);
+  } catch {
+    /* tmpfs / test files may not allow chmod */
+  }
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
@@ -124,15 +141,35 @@ export const nowMs = (): number => Date.now();
 export const nowS = (): number => Math.floor(Date.now() / 1000);
 
 export function logEvent(kind: string, detail: Record<string, unknown>): void {
+  const ts = nowMs();
   getDb()
     .prepare("INSERT INTO operational_events (ts, kind, detail_json) VALUES (?, ?, ?)")
-    .run(nowMs(), kind, JSON.stringify(detail));
+    .run(ts, kind, JSON.stringify(detail));
+  void replica()
+    .then((t) => t.recordTigerEvent(kind, detail, ts))
+    .catch(() => undefined);
+}
+
+const SECRET = /(key|token|secret|password|authorization|cookie|seed|keypair)/i;
+
+export function logSecurity(kind: string, detail: Record<string, unknown>): void {
+  const safe: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(detail)) {
+    if (SECRET.test(k)) safe[k] = "REDACTED";
+    else if (typeof v === "string" && v.length > 400) safe[k] = `${v.slice(0, 400)}…`;
+    else safe[k] = v;
+  }
+  logEvent(`security.${kind}`, safe);
 }
 
 export function ensureUser(userId: string, displayName: string): void {
+  const created = nowMs();
   getDb()
     .prepare("INSERT OR IGNORE INTO users (user_id, display_name, created_at) VALUES (?, ?, ?)")
-    .run(userId, displayName, nowMs());
+    .run(userId, displayName, created);
+  void replica()
+    .then((t) => t.recordTigerUser(userId, displayName, created))
+    .catch(() => undefined);
 }
 
 // Exactly one caller wins. Everyone else sees false and must stop.
@@ -172,9 +209,48 @@ export function finishExecution(
   providerRef: string | null,
   responseJson: string,
 ): void {
+  const finished = nowMs();
   getDb()
     .prepare("UPDATE executions SET status = ?, provider_ref = ?, response_json = ?, finished_at = ? WHERE id = ?")
-    .run(status, providerRef, responseJson, nowMs(), id);
+    .run(status, providerRef, responseJson, finished, id);
+  const row = getDb()
+    .prepare(
+      `SELECT e.assertion_nonce, e.rail, e.request_json, e.started_at, a.user_id
+       FROM executions e LEFT JOIN assertions a ON a.nonce = e.assertion_nonce
+       WHERE e.id = ?`,
+    )
+    .get(id) as
+    | { assertion_nonce: string; rail: string; request_json: string; started_at: number; user_id: string | null }
+    | undefined;
+  if (row) {
+    let request: unknown = row.request_json;
+    let response: unknown = responseJson;
+    try {
+      request = JSON.parse(row.request_json);
+    } catch {
+      /* keep raw */
+    }
+    try {
+      response = JSON.parse(responseJson);
+    } catch {
+      /* keep raw */
+    }
+    void replica()
+      .then((t) =>
+        t.recordTigerExecution({
+          started_at: row.started_at,
+          finished_at: finished,
+          assertion_nonce: row.assertion_nonce,
+          rail: row.rail,
+          status,
+          provider_ref: providerRef,
+          user_id: row.user_id,
+          request,
+          response,
+        }),
+      )
+      .catch(() => undefined);
+  }
 }
 
 export function getExecutionByNonce(nonce: string): ExecutionRow | undefined {

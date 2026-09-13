@@ -45,7 +45,7 @@ export function PresencePanel({ status, reachable, history, now }: Props) {
   return (
     <Panel title="Presence" aria-live="polite" right={ev && <span className="font-mono text-[10px] normal-case tracking-normal">{prefix(ev.digest, 10)}</span>}>
       <div>
-        <div className={`font-mono text-[34px] leading-none font-bold tracking-tight ${TEXT[headlineTone]}`}>{headline}</div>
+        <div className={`font-display text-[40px] leading-none tracking-[-0.04em] ${TEXT[headlineTone]}`}>{headline}</div>
         <div className="mt-1 text-[12px] text-muted">
           {ev ? (
             <>
@@ -67,6 +67,9 @@ export function PresencePanel({ status, reachable, history, now }: Props) {
       )}
 
       <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
+        <KV k="live BLE bpm">
+          {status?.wearer?.last_median && status.wearer.last_median >= 30 ? `${status.wearer.last_median}` : "—"}
+        </KV>
         <KV k="same value for">{ev ? `${frozenS} s` : "—"}</KV>
         <KV k="distinct values / 30 s">{ev ? ev.distinct_values_30s : "—"}</KV>
         <KV k="drift">{ev ? <StateBadge value={ev.drift} /> : "—"}</KV>

@@ -124,10 +124,16 @@ describe("runExecution", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(String(url)).toBe("http://api.nessieisreal.com/accounts/acct_checking/transfers?key=test-nessie-key");
+    expect(String(url)).toBe("https://api.nessieisreal.com/accounts/acct_checking/transfers?key=test-nessie-key");
     expect(init?.method).toBe("POST");
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-    expect(body).toMatchObject({ medium: "balance", payee_id: "acct_rent", amount: 45, status: "pending", description: `araxia ${assertion.nonce}` });
+    expect(body).toMatchObject({
+      amount: 45,
+      status: "completed",
+      description: `araxia ${assertion.nonce} dst=acct_rent`,
+    });
+    expect(body).not.toHaveProperty("medium");
+    expect(body).not.toHaveProperty("payee_id");
     expect(body.transaction_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
     const row = getExecutionByNonce(assertion.nonce);

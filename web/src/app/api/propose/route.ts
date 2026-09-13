@@ -2,20 +2,24 @@ import { z } from "zod";
 import { ActionError, ALLOWED_PAYEES, buildAction, storeAction } from "@/lib/actions";
 import { ensureUser, logEvent } from "@/lib/db";
 import { GeminiError, proposeWithGemini } from "@/lib/gemini";
+import { getNessieLedger } from "@/lib/nessie";
+import { sanitizeText } from "@/lib/security";
 
 const Body = z.object({ user_id: z.string().min(1), prompt: z.string().min(1).max(2000) });
 
 export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return Response.json({ error: "invalid body" }, { status: 400 });
-  const { user_id, prompt } = parsed.data;
+  const user_id = sanitizeText(parsed.data.user_id, 128);
+  const prompt = sanitizeText(parsed.data.prompt, 2000);
   ensureUser(user_id, user_id);
 
+  const ledger = await getNessieLedger();
   let proposal;
   try {
     proposal = await proposeWithGemini(prompt, {
       payees: Object.keys(ALLOWED_PAYEES).filter((label) => label !== "DEVNET"),
-      balanceMinor: null,
+      balanceMinor: ledger.source?.balance_minor ?? null,
     });
   } catch (e) {
     const message = e instanceof GeminiError ? e.message : "proposal failed";

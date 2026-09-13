@@ -1,4 +1,6 @@
-# Araxia
+<p align="center">
+  <img src="logo.png" alt="Araxia" width="280" />
+</p>
 
 A presence-conditioned, action-bound authorization protocol. A passkey approves
 an exact action; a Fitbit Air stream must still be `READY` when the agent

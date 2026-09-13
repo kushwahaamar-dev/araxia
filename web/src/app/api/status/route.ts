@@ -1,11 +1,16 @@
+import { getDb } from "@/lib/db";
 import { latestEvidence, listBridges } from "@/lib/evidence";
 import { listExecutionsForUser } from "@/lib/executions";
-import { solanaAddress } from "@/lib/executors/solana";
+import { getSolanaSnapshot, solanaAddress } from "@/lib/executors/solana";
+import { getTigerSnapshot, pushLocalAuthToTiger, restoreAuthFromTiger } from "@/lib/tiger";
 import { errorResponse } from "@/lib/http";
 import { getIssuer } from "@/lib/issuer";
-import { getKyc, personaConfigured } from "@/lib/persona";
+import { getFitbitSnapshot } from "@/lib/fitbit";
+import { getNessieLedger } from "@/lib/nessie";
+import { getKyc, isPersonaApproved, personaConfigured } from "@/lib/persona";
 import { assuranceFor, evidenceIsFresh, POLICY_HASH } from "@/lib/policy";
 import { requireUserParam } from "@/lib/schemas";
+import { getWearerSession, TEAM } from "@/lib/wearers";
 
 export async function GET(req: Request): Promise<Response> {
   try {
@@ -13,6 +18,18 @@ export async function GET(req: Request): Promise<Response> {
     const now = Date.now();
     const evidence = latestEvidence(user);
     const issuer = getIssuer();
+    const nessie = await getNessieLedger();
+    const wearer = getWearerSession();
+    if (!process.env.VITEST) {
+      const sqlite = getDb();
+      await restoreAuthFromTiger(sqlite).catch(() => 0);
+      pushLocalAuthToTiger(sqlite);
+    }
+    const [fitbit, tiger, solana] = await Promise.all([
+      getFitbitSnapshot(wearer.last_median >= 30 ? wearer.last_median : null),
+      getTigerSnapshot(),
+      getSolanaSnapshot(),
+    ]);
     return Response.json({
       user,
       evidence,
@@ -24,8 +41,20 @@ export async function GET(req: Request): Promise<Response> {
       executions: listExecutionsForUser(user, 10),
       kyc: { configured: personaConfigured(), ...((getKyc(user) ?? { status: "none" }) as object) },
       rails: {
-        nessie: Boolean(process.env.NESSIE_API_KEY),
+        nessie: nessie.configured,
         solana: solanaAddress(),
+      },
+      nessie,
+      fitbit,
+      tiger,
+      solana,
+      wearer: {
+        ...wearer,
+        team: TEAM.map((p) => ({
+          ...p,
+          kyc: getKyc(p.user_id)?.status ?? "none",
+          ready: isPersonaApproved(p.user_id),
+        })),
       },
     });
   } catch (e) {

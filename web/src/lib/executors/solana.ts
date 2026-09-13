@@ -15,6 +15,8 @@ import {
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import type { CanonicalAction } from "@araxia/verify";
+import { solscanAccount, solscanTx } from "@/app/lib-client/solscan";
+import { listTigerSolana, recordTigerSolana } from "../tiger";
 import type { ExecOutcome, Executor } from "./types";
 
 const MEMO_PROGRAM = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
@@ -66,6 +68,142 @@ async function defaultSend(args: { to: string; lamports: number; memo: string })
   return { signature };
 }
 
+export interface SolanaSnapshot {
+  configured: boolean;
+  reachable: boolean;
+  address: string | null;
+  lamports: number | null;
+  airdrop: string | null;
+  explorer: string | null;
+  payee: string | null;
+  last_txs: Array<{ signature: string; nonce: string; dst: string; lamports: number; confirmed_at: number }>;
+  error: string | null;
+  fetched_at: number;
+}
+
+function payeeAddress(): string | null {
+  const v = process.env.SOLANA_PAYEE;
+  return v && v.length > 0 ? v : null;
+}
+
+async function listVisibleTxs(
+  connection: Connection,
+  address: string,
+): Promise<SolanaSnapshot["last_txs"]> {
+  const known = new Map((await listTigerSolana(50)).map((row) => [row.signature, row]));
+  try {
+    const sigs = await connection.getSignaturesForAddress(new PublicKey(address), { limit: 20 });
+    const seen = new Set<string>();
+    const rows: SolanaSnapshot["last_txs"] = [];
+    for (const s of sigs) {
+      seen.add(s.signature);
+      const hit = known.get(s.signature);
+      rows.push({
+        signature: s.signature,
+        nonce: hit?.nonce ?? "",
+        dst: hit?.dst ?? "",
+        lamports: hit?.lamports ?? 0,
+        confirmed_at: s.blockTime ? s.blockTime * 1000 : (hit?.confirmed_at ?? 0),
+      });
+    }
+    for (const row of known.values()) {
+      if (!seen.has(row.signature)) rows.push(row);
+    }
+    return rows;
+  } catch {
+    return [...known.values()];
+  }
+}
+
+let solCache: { at: number; value: SolanaSnapshot } | null = null;
+let airdropAttempted = false;
+const SOL_CACHE_MS = 12_000;
+
+export async function getSolanaSnapshot(now = Date.now()): Promise<SolanaSnapshot> {
+  if (solCache && now - solCache.at < SOL_CACHE_MS) return solCache.value;
+  if (process.env.VITEST && process.env.SOLANA_LIVE !== "1") {
+    const value: SolanaSnapshot = {
+      configured: Boolean(process.env.SOLANA_KEYPAIR),
+      reachable: false,
+      address: null,
+      lamports: null,
+      airdrop: null,
+      explorer: null,
+      payee: payeeAddress(),
+      last_txs: [],
+      error: "skipped in unit tests",
+      fetched_at: now,
+    };
+    solCache = { at: now, value };
+    return value;
+  }
+  const address = solanaAddress();
+  const file = process.env.SOLANA_KEYPAIR;
+  if (!file || !address) {
+    const value: SolanaSnapshot = {
+      configured: false,
+      reachable: false,
+      address: null,
+      lamports: null,
+      airdrop: null,
+      explorer: null,
+      payee: payeeAddress(),
+      last_txs: [],
+      error: "SOLANA_KEYPAIR is not set or the file is missing",
+      fetched_at: now,
+    };
+    solCache = { at: now, value };
+    return value;
+  }
+  const rpc = process.env.SOLANA_RPC ?? "https://api.devnet.solana.com";
+  try {
+    const connection = new Connection(rpc, "confirmed");
+    const pubkey = new PublicKey(address);
+    let lamports = await connection.getBalance(pubkey, "confirmed");
+    let airdrop: string | null = null;
+    if (!airdropAttempted && lamports < 50_000_000) {
+      airdropAttempted = true;
+      try {
+        const sig = await connection.requestAirdrop(pubkey, 1_000_000_000);
+        await connection.confirmTransaction(sig, "confirmed");
+        lamports = await connection.getBalance(pubkey, "confirmed");
+        airdrop = sig;
+      } catch (e) {
+        airdrop = e instanceof Error ? e.message : "airdrop failed";
+      }
+    }
+    const value: SolanaSnapshot = {
+      configured: true,
+      reachable: true,
+      address,
+      lamports,
+      airdrop,
+      payee: payeeAddress(),
+      explorer: solscanAccount(address),
+      last_txs: await listVisibleTxs(connection, address),
+      error: null,
+      fetched_at: now,
+    };
+    solCache = { at: now, value };
+    return value;
+  } catch (e) {
+    const value: SolanaSnapshot = {
+      configured: true,
+      reachable: false,
+      address,
+      lamports: null,
+      airdrop: null,
+      payee: payeeAddress(),
+      explorer: solscanAccount(address),
+      last_txs: await listTigerSolana(20),
+      error: e instanceof Error ? e.message : "solana rpc error",
+      fetched_at: now,
+    };
+    solCache = { at: now, value };
+    return value;
+  }
+}
+
 export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
   return {
     rail: "solana",
@@ -81,10 +219,16 @@ export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
             setTimeout(() => reject(Object.assign(new Error("timed out"), { name: "TimeoutError" })), TIMEOUT_MS);
           }),
         ]);
+        recordTigerSolana({
+          signature,
+          nonce: assertionNonce,
+          dst: action.dst,
+          lamports: action.amount_minor,
+        });
         return {
           status: "CONFIRMED",
           providerRef: signature,
-          response: { signature, explorer: `https://explorer.solana.com/tx/${signature}?cluster=devnet` },
+          response: { signature, explorer: solscanTx(signature) },
         };
       } catch (e) {
         const err = e as { name?: string; message?: string };
