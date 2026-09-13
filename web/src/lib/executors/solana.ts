@@ -213,8 +213,9 @@ export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
         return { status: "FAILED", providerRef: null, response: null, note: "SOLANA_KEYPAIR not configured" };
       }
       try {
+        const memo = `araxia ${assertionNonce} ${action.reason}`.slice(0, 500);
         const { signature } = await Promise.race([
-          send({ to: action.dst, lamports: action.amount_minor, memo: `araxia ${assertionNonce}` }),
+          send({ to: action.dst, lamports: action.amount_minor, memo }),
           new Promise<never>((_, reject) => {
             setTimeout(() => reject(Object.assign(new Error("timed out"), { name: "TimeoutError" })), TIMEOUT_MS);
           }),
@@ -225,10 +226,11 @@ export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
           dst: action.dst,
           lamports: action.amount_minor,
         });
+        solCache = null;
         return {
           status: "CONFIRMED",
           providerRef: signature,
-          response: { signature, explorer: solscanTx(signature) },
+          response: { signature, explorer: solscanTx(signature), memo },
         };
       } catch (e) {
         const err = e as { name?: string; message?: string };

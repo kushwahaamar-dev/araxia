@@ -36,6 +36,18 @@ describe("solana executor", () => {
     expect(solscanTx("sig111")).toBe("https://solscan.io/tx/sig111?cluster=devnet");
   });
 
+  it("binds the assertion nonce and user memo into the send", async () => {
+    process.env.SOLANA_KEYPAIR = "/tmp/unused.json";
+    let memo = "";
+    const ex = solanaExecutor(async (args) => {
+      memo = args.memo;
+      return { signature: "sig111" };
+    });
+    await ex.execute(action, "an_1");
+    expect(memo).toContain("an_1");
+    expect(memo).toContain("DEVNET");
+  });
+
   it("confirms with an explorer link when send succeeds", async () => {
     process.env.SOLANA_KEYPAIR = "/tmp/unused.json";
     const ex = solanaExecutor(async () => ({ signature: "sig111" }));
