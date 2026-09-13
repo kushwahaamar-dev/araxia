@@ -132,7 +132,7 @@ export function BankingDemo() {
       <header className="banking-header">
         <div className="banking-header-inner">
           <Link href="/" className="brand-lockup" aria-label="Small One home"><span className="brand-mark" aria-hidden="true" /> <span className="brand-wordmark"><span className="brand-small">small</span> <span className="brand-one">One</span></span></Link>
-          <div className="header-meta"><span className="nessie-label">PRESENCE PAY</span><span className="header-user">Amar K. <span className="avatar">AK</span></span></div>
+          <div className="header-meta"><span className="header-user">Amar K. <span className="avatar">AK</span></span></div>
         </div>
       </header>
 
