@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { api, errorText, isApiError } from "@/app/lib-client/api";
 import { createAction, runApproval } from "@/app/lib-client/flows";
 import { dollars, secondsUntil } from "@/app/lib-client/format";
@@ -29,6 +29,7 @@ interface Props {
   now: number;
   approveBlocker: string | null;
   onAssertion: (a: Assertion) => void;
+  initialAuthorization?: { created: CreatedAction; assertion: Assertion | null } | null;
 }
 
 type Tab = "manual" | "gemini";
@@ -51,7 +52,7 @@ function parseLamports(input: string): number | null {
   return n > 0 ? n : null;
 }
 
-export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props) {
+export function ActionPanel({ userId, now, approveBlocker, onAssertion, initialAuthorization }: Props) {
   const [tab, setTab] = useState<Tab>("manual");
   const [op, setOp] = useState<string>(OPS[0]);
   const [payee, setPayee] = useState("RENT");
@@ -67,6 +68,10 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
   const [pipeline, setPipeline] = useState<PipelineState>(EMPTY_PIPELINE);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialAuthorization?.assertion) onAssertion(initialAuthorization.assertion);
+  }, [initialAuthorization, onAssertion]);
 
   const startFlow = (c: CreatedAction, note: string | null) => {
     setCreated(c);

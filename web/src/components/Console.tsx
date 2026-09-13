@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api, DEMO_USER } from "@/app/lib-client/api";
-import type { Assertion, Passkey, Presence, StatusResponse } from "@/app/lib-client/types";
+import type { Assertion, CreatedAction, Passkey, Presence, StatusResponse } from "@/app/lib-client/types";
 import { useNow } from "@/app/lib-client/useNow";
 import { ActionPanel } from "./ActionPanel";
 import { AttackLab } from "./AttackLab";
@@ -37,6 +37,15 @@ export function Console() {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [lastAssertion, setLastAssertion] = useState<Assertion | null>(null);
   const [userId, setUserId] = useState(DEMO_USER);
+  const [initialAuthorization] = useState<{ created: CreatedAction; assertion: Assertion | null } | null>(() => {
+    if (typeof window === "undefined" || new URLSearchParams(window.location.search).get("focus") !== "latest") return null;
+    try {
+      const value = JSON.parse(sessionStorage.getItem("araxia.latestAuthorization") ?? "null") as { created?: CreatedAction; assertion?: Assertion | null } | null;
+      return value?.created ? { created: value.created, assertion: value.assertion ?? null } : null;
+    } catch {
+      return null;
+    }
+  });
 
   const loadPasskeys = useCallback(async (user: string) => {
     const r = await api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(user)}`);
@@ -106,7 +115,7 @@ export function Console() {
         />
         <main className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,300px)_minmax(0,1fr)_minmax(0,380px)]">
           <PresencePanel status={status} reachable={reachable} history={history} now={now} />
-          <ActionPanel userId={userId} now={now} approveBlocker={blocker} onAssertion={setLastAssertion} />
+          <ActionPanel userId={userId} now={now} approveBlocker={blocker} onAssertion={setLastAssertion} initialAuthorization={initialAuthorization} />
           <AttackLab userId={userId} lastAssertion={lastAssertion} approveBlocker={blocker} />
         </main>
         <FitbitPanel fitbit={status?.fitbit} liveBleBpm={status?.wearer?.last_median ?? status?.fitbit?.live_ble_bpm} />
