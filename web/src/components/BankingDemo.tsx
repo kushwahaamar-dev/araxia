@@ -278,7 +278,6 @@ export function BankingDemo() {
             </span>
           </Link>
           <div className="header-meta">
-            <span className="nessie-label">PRESENCE PAY</span>
             <span className="header-user">
               {holder} <span className="avatar">{initials(holder)}</span>
             </span>
