@@ -88,6 +88,25 @@ def test_stale_then_same_wearer_is_not_a_handoff(tmp_path, monkeypatch):
     assert changed == 0
 
 
+def test_stale_then_unknown_range_is_a_new_user(tmp_path, monkeypatch):
+    roster = tmp_path / "wearers.json"
+    roster.write_text(
+        json.dumps(
+            {
+                "active_user": "u_amar",
+                "people": {"u_amar": {"label": "Amar", "centroid": 110.0, "sd": 10.0}},
+            }
+        )
+    )
+    monkeypatch.setattr("bridge.wearers.ROSTER_PATH", roster)
+    h = HandoffTracker()
+    h.update([(float(i), 110) for i in range(10)], "READY")
+    h.update([(0.0, 110)], "DISCONNECTED")
+    _, g, c, _ = h.update([(float(i), 65) for i in range(10)], "READY")
+    assert g == ""
+    assert c == 1
+
+
 def test_stale_then_other_wearer_is_a_handoff(tmp_path, monkeypatch):
     roster = tmp_path / "wearers.json"
     roster.write_text(

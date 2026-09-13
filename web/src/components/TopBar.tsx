@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { api, errorText } from "@/app/lib-client/api";
@@ -40,9 +40,11 @@ export function TopBar({
   onPasskeysChanged,
   onUserSwitched,
 }: Props) {
-  const [busy, setBusy] = useState<"register" | "kyc" | "switch" | null>(null);
+  const [busy, setBusy] = useState<"register" | "kyc" | "switch" | "add" | null>(null);
   const [busyUser, setBusyUser] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
   const passkey = passkeys[0];
   const personaOn = kyc?.configured === true;
   const me = wearer?.team.find((p) => p.user_id === userId);
@@ -133,6 +135,30 @@ export function TopBar({
     if ((p.passkeys ?? 0) === 0 && !(await register(p.user_id, p.label))) return;
   };
 
+  // New human: name -> roster -> Persona -> switch (stamps their range) -> Touch ID.
+  const addNewUser = async (e: FormEvent) => {
+    e.preventDefault();
+    const label = newName.trim();
+    if (!label) return;
+    setBusy("add");
+    setBusyUser(null);
+    setError(null);
+    const r = await api<{ member: { user_id: string; label: string } }>("/api/wearers", { body: { label } });
+    setBusy(null);
+    if (r.status >= 400 || !r.body || !("member" in r.body)) {
+      setError(errorText(r, "could not add user"));
+      return;
+    }
+    setNewName("");
+    setAdding(false);
+    await enrollOrSwitch({ ...r.body.member, ready: false, passkeys: 0 });
+  };
+
+  // Members the console shows: verified humans or anyone holding a passkey.
+  // Everyone else is reached through "new user".
+  const shown = wearer?.team.filter((p) => p.ready || p.passkeys > 0 || p.user_id === wearer.active_user) ?? [];
+  const unknownWearer = wearer !== undefined && wearer.guessed_user === "" && wearer.last_median >= 30;
+
   return (
     <header className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -179,9 +205,14 @@ export function TopBar({
 
       {wearer && (
         <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px]">
-          {wearer.halt && <span className="text-white">! halt: user changed — su first</span>}
+          {wearer.halt && (
+            <span className="text-white">
+              {unknownWearer ? "! new user detected — ./register or su" : "! halt: user changed — su first"}
+            </span>
+          )}
+          {!wearer.halt && unknownWearer && <span className="text-dim">? range unknown — new user?</span>}
           <span className="text-dim">su</span>
-          {wearer.team.map((p) => {
+          {shown.map((p) => {
             const active = p.user_id === wearer.active_user;
             const needsKyc = personaOn && !p.ready;
             const needsKey = (p.user_id === userId ? passkeys.length : (p.passkeys ?? 0)) === 0;
@@ -210,6 +241,38 @@ export function TopBar({
               </button>
             );
           })}
+          {adding ? (
+            <form className="flex items-baseline gap-2" onSubmit={(e) => void addNewUser(e)}>
+              <label htmlFor="new-user-name" className="text-dim">
+                --name
+              </label>
+              <input
+                id="new-user-name"
+                className="field w-36"
+                autoFocus
+                value={newName}
+                placeholder="full name"
+                maxLength={40}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setAdding(false);
+                }}
+                disabled={busy !== null}
+              />
+              <button type="submit" className="btn" disabled={busy !== null || !newName.trim()}>
+                {busy === "add" ? "adding…" : "enter"}
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className={unknownWearer ? "btn btn-primary" : "text-dim hover:text-fg"}
+              disabled={busy !== null || !reachable}
+              onClick={() => setAdding(true)}
+            >
+              {unknownWearer ? "new user ./register" : "+ new user"}
+            </button>
+          )}
         </div>
       )}
 

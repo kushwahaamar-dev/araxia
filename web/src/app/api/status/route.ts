@@ -11,7 +11,7 @@ import { listPasskeys } from "@/lib/passkeys";
 import { getKyc, isPersonaApproved, personaConfigured } from "@/lib/persona";
 import { assuranceFor, evidenceIsFresh, POLICY_HASH } from "@/lib/policy";
 import { requireUserParam } from "@/lib/schemas";
-import { getWearerSession, TEAM } from "@/lib/wearers";
+import { getWearerSession, team } from "@/lib/wearers";
 
 export async function GET(req: Request): Promise<Response> {
   try {
@@ -51,7 +51,7 @@ export async function GET(req: Request): Promise<Response> {
       solana,
       wearer: {
         ...wearer,
-        team: TEAM.map((p) => ({
+        team: team().map((p) => ({
           ...p,
           kyc: getKyc(p.user_id)?.status ?? "none",
           ready: isPersonaApproved(p.user_id),

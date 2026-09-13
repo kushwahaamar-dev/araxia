@@ -1,8 +1,9 @@
-"""Handoff detector: nearest enrolled BPM centroid, two windows.
+"""Handoff detector: nearest enrolled BPM centroid after a continuity break.
 
-This does not identify a person. Amar (98) and Laksh (93) overlap. A window
-is assigned to whoever is closer, and only after two consecutive windows.
-Unknown (far from every centroid) is also a handoff — register the new wearer.
+This does not identify a person; resting ranges overlap. It answers a smaller
+question: since the stream last broke, does the range still look like the
+active wearer? Unknown (far from every centroid) after a break is a new-user
+prompt. Passkey and Persona name the human; this only decides when to ask.
 """
 
 from __future__ import annotations
@@ -90,10 +91,13 @@ class HandoffTracker:
             return active, self._last_guess, 0, median
         guessed = guess(float(median), roster)
         self._last_guess = guessed
-        # Overlapping HR while the stream never dropped is not a handoff.
+        # A band cannot change wrists without the stream breaking first, so a
+        # break is the only honest handoff signal. After one, a different or
+        # unknown range means "someone else may be wearing this". Overlapping
+        # HR while the stream never dropped is not a handoff.
         changed = 0
         if self._broken:
             self._broken = False
-            if guessed and guessed != active:
+            if guessed != active:
                 changed = 1
         return active, guessed, changed, median
