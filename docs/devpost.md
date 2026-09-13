@@ -23,9 +23,37 @@ works on real rails. Pitch the layer; demo the product on top.
 2. Araxia is an authorization layer: approve exact actions with a passkey, enforce human presence with a wearable, verify offline. Demos on Nessie and Solana prove the rails. (171)
 3. A passkey approves one exact payment. A wearable proves a human is still there when the agent sends it. The bank never sees a heartbeat. (136) — product-flavored; use only if you want finance-first.
 
-**Tag only what ran:** python, bleak, ed25519, webauthn, passkeys, typescript, next.js, react, sqlite, capital-one-nessie, solana, gemini, persona, tigerdata, google-health-api, docker, vultr.
+**Built with (exactly 25 — paste / pick these):**
 
-**Do not tag:** MathWorks, Presage, ElevenLabs, Backboard.
+1. `python`
+2. `typescript`
+3. `next.js`
+4. `react`
+5. `webauthn`
+6. `passkeys`
+7. `ed25519`
+8. `sqlite`
+9. `better-sqlite3`
+10. `bleak`
+11. `fitbit`
+12. `bluetooth-low-energy`
+13. `capital-one-nessie`
+14. `solana`
+15. `@solana/web3.js`
+16. `solscan`
+17. `gemini`
+18. `persona`
+19. `tigerdata`
+20. `timescaledb`
+21. `google-health-api`
+22. `docker`
+23. `vultr`
+24. `zod`
+25. `vitest`
+
+**Do not tag:** MathWorks, Presage, ElevenLabs, Backboard, Notability (process prize — screenshots, not a build tag unless Devpost lists it).
+
+If a label isn’t in Devpost’s autocomplete, type the closest match (`nesSIE` / `Capital One`, `Google Gemini`, `Tiger Data`, `WebAuthn` / `Passkeys`).
 
 **Links**
 
