@@ -32,17 +32,31 @@ function approveBlocker(status: StatusResponse | null, reachable: boolean, hasPa
 
 type FocusAuth = { created: CreatedAction; assertion: Assertion | null };
 
+let focusCacheKey = "";
+let focusCacheValue: FocusAuth | null = null;
+
+/** Stable snapshot: JSON.parse would otherwise return a new object every call and loop. */
 function readFocusAuthorization(): FocusAuth | null {
-  if (new URLSearchParams(window.location.search).get("focus") !== "latest") return null;
+  const focus = new URLSearchParams(window.location.search).get("focus");
+  if (focus !== "latest") {
+    focusCacheKey = `focus:${focus ?? ""}`;
+    focusCacheValue = null;
+    return null;
+  }
+  const raw = sessionStorage.getItem("araxia.latestAuthorization") ?? "";
+  const key = `latest:${raw}`;
+  if (key === focusCacheKey) return focusCacheValue;
+  focusCacheKey = key;
   try {
-    const value = JSON.parse(sessionStorage.getItem("araxia.latestAuthorization") ?? "null") as {
+    const value = JSON.parse(raw || "null") as {
       created?: CreatedAction;
       assertion?: Assertion | null;
     } | null;
-    return value?.created ? { created: value.created, assertion: value.assertion ?? null } : null;
+    focusCacheValue = value?.created ? { created: value.created, assertion: value.assertion ?? null } : null;
   } catch {
-    return null;
+    focusCacheValue = null;
   }
+  return focusCacheValue;
 }
 
 /** false on the server and during hydration; true only after the client store snapshot applies. */
@@ -56,13 +70,15 @@ function useFocusAuthorization(): FocusAuth | null {
   return ready ? auth : null;
 }
 
+let loginLineCache: string | null = null;
+function readLoginLine(): string {
+  if (!loginLineCache) loginLineCache = `last login: ${new Date().toDateString()} from ble`;
+  return loginLineCache;
+}
+
 function useLoginLine(): string {
   const ready = useClientReady();
-  const line = useSyncExternalStore(
-    emptySubscribe,
-    () => `last login: ${new Date().toDateString()} from ble`,
-    () => "last login: ble",
-  );
+  const line = useSyncExternalStore(emptySubscribe, readLoginLine, () => "last login: ble");
   return ready ? line : "last login: ble";
 }
 
