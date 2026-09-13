@@ -53,7 +53,9 @@ You **cannot** claim as true:
 
 ### 0:25 — Fitbit Air `[hold up band · ~12–15 s · point at READY]`
 
-**Fitbit Air. BLE heart-rate — BPM about once a second. No RR, no skin-contact, no temp — we measured that. Off-wrist it freezes; we STALE in eight seconds. Raw BPM stays here; only signed window stats leave.**
+**This is a Google Fitbit Air. We mapped the Bluetooth ourselves. It just sends a heart rate number, about once a second. No fancy beat timing, no "are you wearing me" bit, no temperature — we checked.**
+
+**Here's the annoying part: take it off and it keeps screaming the last BPM forever. So we watch for that freeze and call it STALE in about eight seconds. The raw numbers stay on this laptop. The service only gets signed summaries.**
 
 ### 0:40 — Talk to the agent `[/ → ./gemini  OR  narrate then cut to /bank]`
 
