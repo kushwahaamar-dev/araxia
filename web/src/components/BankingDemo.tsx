@@ -8,6 +8,7 @@ import { dollars, prefix, secondsUntil } from "@/app/lib-client/format";
 import { looksLikeSolanaSig } from "@/app/lib-client/solscan";
 import { useNow } from "@/app/lib-client/useNow";
 import type { Assertion, CreatedAction, Decision, ExecuteDenied, ExecuteOk, Passkey, StatusResponse } from "@/app/lib-client/types";
+import { commitmentOf } from "@/app/lib-client/types";
 import { SolscanLink, StateBadge, toneFor } from "./ui";
 
 type Stage = "entry" | "review" | "authorize" | "receipt";
@@ -165,6 +166,7 @@ export function BankingDemo() {
   const freshOk = status?.fresh === true;
   const txRef = result && result.outcome === "EXECUTED" ? result.providerRef : null;
   const onChain = Boolean(txRef && looksLikeSolanaSig(txRef));
+  const commitment = result && result.outcome === "EXECUTED" ? commitmentOf(result.response) : null;
 
   const pickRail = (next: Rail) => {
     setRail(next);
@@ -616,6 +618,24 @@ export function BankingDemo() {
                     </div>
                   )}
                 </dl>
+                {onChain && commitment && (
+                  <div className="commitment-card">
+                    <p className="section-kicker">Written on-chain (memo instruction)</p>
+                    <p className="muted">
+                      Hashes only. No name, user id, or heart-rate value appears on Solana; the bank never sees a heartbeat.
+                    </p>
+                    <dl className="receipt-details commitment-list">
+                      <div><dt>Assertion nonce</dt><dd><code>{commitment.n}</code></dd></div>
+                      <div><dt>Action digest</dt><dd><code>{commitment.a}</code></dd></div>
+                      <div><dt>Signed assertion digest</dt><dd><code>{commitment.s}</code></dd></div>
+                      <div><dt>Wearer identity (keyed hash)</dt><dd><code>{commitment.u}</code></dd></div>
+                      <div><dt>Enrolled BPM range (keyed hash)</dt><dd><code>{commitment.w}</code></dd></div>
+                      <div><dt>Presence evidence digest</dt><dd><code>{commitment.e}</code></dd></div>
+                      <div><dt>Presence / assurance</dt><dd><code>{commitment.p}</code></dd></div>
+                      <div><dt>Issuer key</dt><dd><code>{commitment.k}</code></dd></div>
+                    </dl>
+                  </div>
+                )}
                 <div className="form-actions">
                   {onChain && txRef && (
                     <a className="bank-button button-link" href={`https://solscan.io/tx/${encodeURIComponent(txRef)}?cluster=devnet`} rel="noreferrer" target="_blank">

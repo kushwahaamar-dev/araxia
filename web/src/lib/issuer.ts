@@ -1,6 +1,6 @@
 // The only component that holds the assertion signing key.
 
-import { createHash, createPrivateKey, createPublicKey, randomBytes, sign as nodeSign, type KeyObject } from "node:crypto";
+import { createHash, createHmac, createPrivateKey, createPublicKey, randomBytes, sign as nodeSign, type KeyObject } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
@@ -20,6 +20,8 @@ interface Issuer {
   key: KeyObject;
   kid: string;
   publicKeyHex: string;
+  /** Derived from the seed; keys the on-chain commitments so user ids cannot be brute-forced from a memo. */
+  commitKey: Buffer;
 }
 
 let issuer: Issuer | null = null;
@@ -43,8 +45,14 @@ export function getIssuer(): Issuer {
   const jwk = createPublicKey(key).export({ format: "jwk" }) as { x: string };
   const publicKeyHex = Buffer.from(jwk.x, "base64url").toString("hex");
   const kid = "k_" + createHash("sha256").update(publicKeyHex, "hex").digest("hex").slice(0, 16);
-  issuer = { key, kid, publicKeyHex };
+  const commitKey = createHash("sha256").update(Buffer.concat([seed, Buffer.from("araxia/commit")])).digest();
+  issuer = { key, kid, publicKeyHex, commitKey };
   return issuer;
+}
+
+/** Keyed commitment: HMAC-SHA256(commitKey, kind|data). Public memos carry these, never the plaintext. */
+export function commitHex(kind: string, data: string, bytes = 8): string {
+  return createHmac("sha256", getIssuer().commitKey).update(`${kind}|${data}`).digest("hex").slice(0, bytes * 2);
 }
 
 export interface IssueInput {

@@ -1,6 +1,8 @@
-// Solana devnet relayer. Same Araxia assertion, different rail. The nonce is
-// written into a memo instruction so the explorer shows the binding. No custom
-// on-chain program; that is future work and is described as such.
+// Solana devnet relayer. Same Araxia assertion, different rail. The memo
+// instruction carries the commitment record (nonce, action + assertion
+// digests, keyed wearer and BPM-range commitments, presence evidence digest)
+// so the explorer shows the binding next to the transfer. No custom on-chain
+// program; that is future work and is described as such.
 
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -17,7 +19,7 @@ import {
 import type { CanonicalAction } from "@araxia/verify";
 import { solscanAccount, solscanTx } from "@/app/lib-client/solscan";
 import { listTigerSolana, recordTigerSolana } from "../tiger";
-import type { ExecOutcome, Executor } from "./types";
+import type { ExecContext, ExecOutcome, Executor } from "./types";
 
 const MEMO_PROGRAM = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 const TIMEOUT_MS = 15_000;
@@ -208,12 +210,13 @@ export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
   return {
     rail: "solana",
     aud: "solana-devnet",
-    async execute(action: CanonicalAction, assertionNonce: string): Promise<ExecOutcome> {
+    async execute(action: CanonicalAction, assertionNonce: string, ctx?: ExecContext): Promise<ExecOutcome> {
       if (!process.env.SOLANA_KEYPAIR) {
         return { status: "FAILED", providerRef: null, response: null, note: "SOLANA_KEYPAIR not configured" };
       }
       try {
-        const memo = `araxia ${assertionNonce} ${action.reason}`.slice(0, 500);
+        // Full commitment memo when the runner supplies one; bare nonce+reason otherwise.
+        const memo = (ctx?.memo ?? `araxia ${assertionNonce} ${action.reason}`).slice(0, 500);
         const { signature } = await Promise.race([
           send({ to: action.dst, lamports: action.amount_minor, memo }),
           new Promise<never>((_, reject) => {
@@ -230,7 +233,7 @@ export function solanaExecutor(send: SolanaSend = defaultSend): Executor {
         return {
           status: "CONFIRMED",
           providerRef: signature,
-          response: { signature, explorer: solscanTx(signature), memo },
+          response: { signature, explorer: solscanTx(signature), memo, commitment: ctx?.commitment ?? null },
         };
       } catch (e) {
         const err = e as { name?: string; message?: string };

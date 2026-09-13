@@ -197,6 +197,28 @@ export interface ExecuteOk {
   note?: string;
 }
 
+/** Mirror of web/src/lib/commitment.ts; what the Solana memo carries. */
+export interface OnChainCommitment {
+  v: string;
+  n: string;
+  a: string;
+  s: string;
+  u: string;
+  w: string;
+  e: string;
+  p: string;
+  k: string;
+  m: string;
+}
+
+export function commitmentOf(response: unknown): OnChainCommitment | null {
+  if (typeof response !== "object" || response === null) return null;
+  const c = (response as { commitment?: unknown }).commitment;
+  if (typeof c !== "object" || c === null) return null;
+  const o = c as Record<string, unknown>;
+  return typeof o.v === "string" && typeof o.n === "string" && typeof o.u === "string" ? (o as unknown as OnChainCommitment) : null;
+}
+
 export interface ExecuteDenied {
   outcome: "DENIED";
   reason: string;

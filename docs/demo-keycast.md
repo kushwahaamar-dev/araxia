@@ -82,7 +82,7 @@ You **cannot** claim as true:
 **Capital One Nessie records the transfer. Honest beat: their sandbox leaves the seeded balance field frozen — we verified that live. What you see moving is Araxia’s settlement overlay on top of that seed, labeled on screen.**
 
 `[OPTIONAL: switch rail / show Solana panel]`  
-**Same assertion shape, second rail — Solana devnet. Nonce in the memo. Signature opens on Solscan. Rail-agnostic protocol.**
+**Same assertion shape, second rail — Solana devnet. In the memo we commit the whole thing: nonce, hash of the signed action, keyed hashes of who was wearing the band and their enrolled heart-rate range, hash of the presence evidence, READY slash AAL3. Hashes, not names, not BPM. Open Solscan and it's all there next to the transfer.**
 
 ### 2:10 — Product on the layer `[/bank]`
 

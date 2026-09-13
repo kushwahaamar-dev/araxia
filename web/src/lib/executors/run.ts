@@ -3,11 +3,12 @@
 // nothing here ever issues a second provider call.
 
 import { verifyAssertion, type Assertion } from "@araxia/verify";
+import { buildCommitment, encodeMemo } from "../commitment";
 import { claimAssertion, finishExecution, getExecutionByNonce, insertExecution, logEvent, logSecurity } from "../db";
 import { latestEvidence } from "../evidence";
 import { getIssuer } from "../issuer";
 import { evidenceIsFresh } from "../policy";
-import { wearerHalted } from "../wearers";
+import { wearerHalted, wearerRange } from "../wearers";
 import type { ExecOutcome, Executor } from "./types";
 
 export type ExecResult =
@@ -69,7 +70,12 @@ export async function runExecution(assertion: Assertion, executor: Executor, cla
     executor.rail,
     JSON.stringify({ action: assertion.action, nonce: assertion.nonce }),
   );
-  const outcome = await executor.execute(assertion.action, assertion.nonce);
+  const commitment = buildCommitment(assertion, ev, wearerRange(assertion.sub));
+  const outcome = await executor.execute(assertion.action, assertion.nonce, {
+    assertion,
+    commitment,
+    memo: encodeMemo(commitment),
+  });
   finishExecution(executionId, outcome.status, outcome.providerRef, JSON.stringify(outcome.response ?? null));
   logEvent("execution.finished", { nonce: assertion.nonce, status: outcome.status, execution_id: executionId });
 

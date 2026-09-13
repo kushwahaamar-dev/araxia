@@ -20,6 +20,7 @@ and Solana devnet.
 Repo: https://github.com/kushwahaamar-dev/araxia
 
 - What we claim, and what we refuse to claim: [`docs/CLAIMS.md`](docs/CLAIMS.md)
+- What goes on-chain (and what deliberately doesn't): [`docs/onchain.md`](docs/onchain.md)
 - Measured hardware facts (GATT surface, off-wrist behaviour, thresholds): [`capture/hardware_gate.md`](capture/hardware_gate.md)
 - Prize/challenge mapping: [`docs/challenges.md`](docs/challenges.md)
 - Devpost copy: [`docs/devpost.md`](docs/devpost.md)

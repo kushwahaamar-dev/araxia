@@ -76,6 +76,12 @@ export function labelFor(userId: string): string {
   return readRoster().people[userId]?.label ?? userId;
 }
 
+/** Enrolled BPM range for on-chain commitment; nulls when the wearer has no stamped range yet. */
+export function wearerRange(userId: string): { centroid: number | null; sd: number | null } {
+  const p = readRoster().people[userId];
+  return { centroid: p?.centroid ?? null, sd: p?.sd ?? null };
+}
+
 function slugFor(label: string, people: Record<string, Person>): string {
   const base = label.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 24);
   if (!base) throw new Error("name needs at least one letter or digit");
