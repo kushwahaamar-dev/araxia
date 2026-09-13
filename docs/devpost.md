@@ -64,25 +64,17 @@ Texas Tech University
 araxia.fit
 ```
 
-### Tech feedback (pick a few; each should name the tech)
+### Tech feedback (paste into Devpost)
 
-**Gemini** — Strong fit for constrained proposals: JSON schema + low temperature kept output in shape. We still revalidate every field server-side; the model proposes, it never decides. Latency was fine for a demo propose step.
+```
+Vultr was the hardest sponsor stack for us to configure. The Dockerfile path was clear enough, but getting from “image builds” to a trustworthy public evidence URL still felt underspecified—we would have loved more detailed docs and a short workshop on Vultr deploy + DNS for hackathon demos.
 
-**Capital One Nessie** — Easy to wire transfers, but the current `TransferCreate` schema has no payee field and seeded balances do not move. Great for proving a rail exists; say that honestly on screen.
+Besides that, everything else we touched was comparatively easy to wire: Gemini for structured proposals, Persona for enrollment, Solana/Solscan for a second rail, Tiger Data as an audit replica, WebAuthn/passkeys, and GitHub for the monorepo.
 
-**Persona** — Hosted inquiry sandbox made “no passkey until verified” real. Sandbox “Pass verification” and browser/camera quirks (e.g. Brave popups) are the main friction.
+We especially loved that the judges and organizers let us bring our own hardware and reverse-engineer it (Fitbit Air over BLE / Google Health). That freedom shaped the whole presence design.
 
-**Solana (devnet) + Solscan** — Same Araxia assertion, second rail; memo with nonce and explorer links made the claim checkable. Devnet airdrop / keypair setup is the only ops tax.
-
-**Tiger Data (Timescale)** — Useful audit replica (users, evidence, executions). SQLite still owns claim-once; keep that split clear.
-
-**Fitbit Air / Google Health + BLE (`bleak`)** — Share-HR gate and off-wrist freeze shaped the whole presence design. macOS CoreBluetooth cannot bond from code; one-time confirm in the app is required.
-
-**WebAuthn / passkeys** — Binding the challenge to the action digest is the right shape for agentic money. Touch ID UX is demo-friendly.
-
-**GitHub** — Fine for monorepo + docs; keep secrets out of the tree (`.env.local` only).
-
-**Vultr / Docker** — Dockerfile builds the service for evidence; live demo stays on localhost because of SQLite/`better-sqlite3` + BLE.
+One rough patch: for a stretch of the weekend the Capital One Nessie API was failing or flaky in a certain time window; it recovered by the end and our transfers went through again.
+```
 
 ### Which AI tools did you use this weekend?
 Select: **Gemini** only (among the listed GenAI tools).
