@@ -90,9 +90,32 @@ export interface TigerSnapshot {
 let pool: Pool | null = null;
 let migrate: Promise<void> | null = null;
 let restored = false;
+let restoreNextAttempt = 0;
+let lastAuthPush = 0;
+let lastGood: TigerSnapshot | null = null;
 const inflight = new Set<Promise<void>>();
 let cache: { at: number; value: TigerSnapshot } | null = null;
 const CACHE_MS = 8_000;
+const ERROR_CACHE_MS = 20_000;
+const SNAPSHOT_WAIT_MS = 2_500;
+const AUTH_PUSH_MS = 60_000;
+const RESTORE_BACKOFF_MS = 60_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const id = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(id);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(id);
+        reject(e);
+      },
+    );
+  });
+}
 
 export function tigerUrl(): string | null {
   const v = process.env.TIGERDATA_URL;
@@ -142,7 +165,7 @@ function getPool(): Pool | null {
   if (!pool) {
     pool = new Pool({
       connectionString: connectionString(url),
-      max: 4,
+      max: 8,
       ssl: { rejectUnauthorized: false },
       connectionTimeoutMillis: 8_000,
     });
@@ -343,12 +366,18 @@ export function recordTigerSolana(row: {
 
 export async function restoreAuthFromTiger(db: Database.Database): Promise<number> {
   if (restored) return 0;
+  const now = Date.now();
+  if (now < restoreNextAttempt) return 0;
   const p = getPool();
   if (!p) return 0;
   try {
-    await ensureTiger();
-    const users = await p.query<{ user_id: string; display_name: string; created_at: Date }>(
-      "SELECT user_id, display_name, created_at FROM araxia_users",
+    await withTimeout(ensureTiger(), SNAPSHOT_WAIT_MS, "tiger schema");
+    const users = await withTimeout(
+      p.query<{ user_id: string; display_name: string; created_at: Date }>(
+        "SELECT user_id, display_name, created_at FROM araxia_users",
+      ),
+      SNAPSHOT_WAIT_MS,
+      "tiger users",
     );
     for (const u of users.rows) {
       db.prepare("INSERT OR IGNORE INTO users (user_id, display_name, created_at) VALUES (?, ?, ?)").run(
@@ -373,11 +402,16 @@ export async function restoreAuthFromTiger(db: Database.Database): Promise<numbe
     restored = true;
     return users.rows.length + keys.rows.length;
   } catch {
+    // Pool saturated or replica down: try again later instead of stalling every status poll.
+    restoreNextAttempt = Date.now() + RESTORE_BACKOFF_MS;
     return 0;
   }
 }
 
 export function pushLocalAuthToTiger(db: Database.Database): void {
+  const now = Date.now();
+  if (now - lastAuthPush < AUTH_PUSH_MS) return;
+  lastAuthPush = now;
   const users = db.prepare("SELECT user_id, display_name, created_at FROM users").all() as Array<{
     user_id: string;
     display_name: string;
@@ -405,43 +439,61 @@ export async function getTigerSnapshot(now = Date.now()): Promise<TigerSnapshot>
     return value;
   }
   try {
-    await ensureTiger();
+    await withTimeout(ensureTiger(), SNAPSHOT_WAIT_MS, "tiger schema");
     const p = getPool();
     if (!p) throw new Error("no pool");
-    const [users, passkeys, evidence, executions, events, health, solana, recent] = await Promise.all([
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_users"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_passkeys"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_evidence"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_executions"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_events"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_health"),
-      p.query<{ n: string }>("SELECT COUNT(*)::text AS n FROM araxia_solana"),
-      p.query<{ ts: Date; kind: string }>("SELECT ts, kind FROM araxia_events ORDER BY ts DESC LIMIT 8"),
-    ]);
+    // One round trip on one client; eight parallel queries starved when the pool was busy with evidence writes.
+    const row = await withTimeout(
+      p.query<{
+        users: string;
+        passkeys: string;
+        evidence: string;
+        executions: string;
+        events: string;
+        health: string;
+        solana: string;
+        recent: Array<{ ts: string; kind: string }> | null;
+      }>(
+        `SELECT
+           (SELECT COUNT(*) FROM araxia_users)::text AS users,
+           (SELECT COUNT(*) FROM araxia_passkeys)::text AS passkeys,
+           (SELECT COUNT(*) FROM araxia_evidence)::text AS evidence,
+           (SELECT COUNT(*) FROM araxia_executions)::text AS executions,
+           (SELECT COUNT(*) FROM araxia_events)::text AS events,
+           (SELECT COUNT(*) FROM araxia_health)::text AS health,
+           (SELECT COUNT(*) FROM araxia_solana)::text AS solana,
+           (SELECT COALESCE(json_agg(json_build_object('ts', ts, 'kind', kind) ORDER BY ts DESC), '[]'::json)
+              FROM (SELECT ts, kind FROM araxia_events ORDER BY ts DESC LIMIT 8) r) AS recent`,
+      ),
+      SNAPSHOT_WAIT_MS,
+      "tiger snapshot",
+    );
+    const r = row.rows[0];
     const value: TigerSnapshot = {
       configured: true,
       reachable: true,
       source: "tigerdata",
-      users: Number(users.rows[0]?.n ?? 0),
-      passkeys: Number(passkeys.rows[0]?.n ?? 0),
-      evidence: Number(evidence.rows[0]?.n ?? 0),
-      executions: Number(executions.rows[0]?.n ?? 0),
-      events: Number(events.rows[0]?.n ?? 0),
-      health: Number(health.rows[0]?.n ?? 0),
-      solana: Number(solana.rows[0]?.n ?? 0),
-      recent: recent.rows.map((r) => ({ ts: r.ts.getTime(), kind: r.kind })),
+      users: Number(r?.users ?? 0),
+      passkeys: Number(r?.passkeys ?? 0),
+      evidence: Number(r?.evidence ?? 0),
+      executions: Number(r?.executions ?? 0),
+      events: Number(r?.events ?? 0),
+      health: Number(r?.health ?? 0),
+      solana: Number(r?.solana ?? 0),
+      recent: (r?.recent ?? []).map((e) => ({ ts: new Date(e.ts).getTime(), kind: e.kind })),
       error: null,
       fetched_at: now,
     };
     cache = { at: now, value };
+    lastGood = value;
     return value;
   } catch (e) {
-    const value = empty({
-      configured: true,
-      error: e instanceof Error ? e.message : "TigerData unreachable",
-      fetched_at: now,
-    });
-    cache = { at: now, value };
+    const error = e instanceof Error ? e.message : "TigerData unreachable";
+    // Keep the last good counts on screen rather than blanking the panel on a slow poll.
+    const value: TigerSnapshot = lastGood
+      ? { ...lastGood, reachable: false, error, fetched_at: now }
+      : empty({ configured: true, error, fetched_at: now });
+    cache = { at: now - CACHE_MS + ERROR_CACHE_MS, value };
     return value;
   }
 }
