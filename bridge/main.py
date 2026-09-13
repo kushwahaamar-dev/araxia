@@ -20,7 +20,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from bleak import BleakClient, BleakScanner
@@ -43,7 +43,7 @@ class Sample:
         self.bpm = bpm
 
 
-async def _one_connection(device: object, connect_timeout: float) -> AsyncIterator[Sample]:
+async def _one_connection(device: object, connect_timeout: float) -> AsyncGenerator[Sample]:
     queue: asyncio.Queue[Sample | None] = asyncio.Queue()
 
     def on_data(_sender: object, data: bytearray) -> None:
@@ -68,7 +68,7 @@ async def _one_connection(device: object, connect_timeout: float) -> AsyncIterat
             yield item
 
 
-async def ble_samples(address: str, connect_timeout: float) -> AsyncIterator[Sample | None]:
+async def ble_samples(address: str, connect_timeout: float) -> AsyncGenerator[Sample | None]:
     """Yield samples from the band; yield None on each disconnect. Reconnects forever."""
     while True:
         device = await BleakScanner.find_device_by_address(address, timeout=connect_timeout)
@@ -87,7 +87,7 @@ async def ble_samples(address: str, connect_timeout: float) -> AsyncIterator[Sam
         await asyncio.sleep(1.0)
 
 
-async def replay_samples(path: Path, speed: float) -> AsyncIterator[Sample | None]:
+async def replay_samples(path: Path, speed: float) -> AsyncGenerator[Sample | None]:
     rows = [json.loads(line) for line in path.read_text().splitlines() if line]
     t0 = time.monotonic()
     base = rows[0]["t"]
