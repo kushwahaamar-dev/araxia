@@ -51,14 +51,9 @@ You **cannot** claim as true:
 
 **We bind approval to one exact action, and we require a human body still on the wrist when that action executes. The bank never sees a heartbeat.**
 
-### 0:25 — Fitbit Air `[hold up band · ~15 s · point at READY]`
+### 0:25 — Fitbit Air `[hold up band · ~12–15 s · point at READY]`
 
-**Google Fitbit Air. We reverse-mapped the BLE — Heart Rate Service, a BPM integer about once a second. No RR intervals, no skin-contact flag, no temp on that pipe — we measured it.**
-
-**The gate is variation. Off-wrist it freezes the last BPM forever; packets still arrive. We go STALE in about eight seconds. Raw BPM never leaves this laptop — only signed window stats.**
-
-`[optional one breath, if panel visible]`  
-**Google Health on the side is context. Not in the trust boundary.**
+**Fitbit Air. BLE heart-rate — BPM about once a second. No RR, no skin-contact, no temp — we measured that. Off-wrist it freezes; we STALE in eight seconds. Raw BPM stays here; only signed window stats leave.**
 
 ### 0:40 — Talk to the agent `[/ → ./gemini  OR  narrate then cut to /bank]`
 
@@ -203,9 +198,9 @@ Use when judges linger. Same hard rails.
 
 ## Fitbit Air — 15-second card (memorize)
 
-**Google Fitbit Air. We reverse-mapped the BLE — Heart Rate Service, a BPM integer about once a second. No RR intervals, no skin-contact flag, no temp on that pipe — we measured it. The gate is variation: off-wrist it freezes forever while packets keep arriving; we go STALE in about eight seconds. Raw BPM stays on this laptop — only signed window stats leave.**
+**Fitbit Air. BLE heart-rate — BPM about once a second. No RR, no skin-contact, no temp — we measured that. Off-wrist it freezes; we STALE in eight seconds. Raw BPM stays here; only signed window stats leave.**
 
-(~12–15 s at a calm pace. Drop the Google Health breath if you’re tight on time.)
+(~12–15 s. If you have five extra seconds: *“Google Health on screen is context — not in the trust boundary.”*)
 
 ---
 
