@@ -14,7 +14,7 @@ works on real rails. Pitch the layer; demo the product on top.
 | --- | --- |
 | **Project name** | Araxia |
 | **Elevator pitch (recommended)** | A presence-conditioned, action-bound auth protocol: passkey signs one exact action; wearable liveness must hold at execute. Drop it under any agentic product. |
-| **Pitch length** | 161 characters |
+| **Pitch length** | 158 characters |
 | **Thumbnail** | Console `READY` frame, crop 3:2 |
 
 **Alternates** (≤200 chars):
