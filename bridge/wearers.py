@@ -31,7 +31,7 @@ def default_roster() -> dict:
         "people": {
             "u_amar": {"label": "Amar", "centroid": 110.0, "sd": 10.0},
             "u_laksh": {"label": "Laksh", "centroid": 93.4, "sd": 3.4},
-            "u_jagriti": {"label": "Jagriti", "centroid": None, "sd": None},
+            "u_jagrati": {"label": "Jagrati", "centroid": None, "sd": None},
         },
     }
 
