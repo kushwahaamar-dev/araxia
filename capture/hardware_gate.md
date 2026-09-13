@@ -62,7 +62,9 @@ Derived from the captures above; all margins are against the worst worn case
   last 30 s, and last packet age < 3 s.
 - `WARMING`: connected but READY condition not yet met (covers the ~21 s stale
   carry-over after re-wear and the settle period after connect).
-- `STALE`: last packet age >= 3 s, or the same BPM value for >= 30 s.
+- `STALE`: last packet age >= 3 s, or the same BPM value for >= 8 s
+  (just above the longest worn identical run we measured; off-wrist freezes
+  forever, so this is what makes unwrap → handoff feel fast).
   STALE can only deny or step up to passkey re-verification; it never
   approves at AAL3.
 - `DISCONNECTED`: no packet for >= 10 s or link lost.

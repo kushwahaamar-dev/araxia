@@ -25,7 +25,9 @@ class Presence(StrEnum):
 class Thresholds:
     pause_after_s: float = 3.0
     disconnect_after_s: float = 10.0
-    frozen_stale_s: float = 30.0
+    # Worn capture longest identical run was ~7 s; calm plateaus hit ~15 s.
+    # 8 s catches off-wrist freeze fast for handoff without nuking typical wear.
+    frozen_stale_s: float = 8.0
     ready_window_s: float = 30.0
     min_distinct_values: int = 2
     bpm_min: int = 30

@@ -33,7 +33,8 @@ def test_worn_capture_reaches_ready_and_stays_there():
 def test_offwrist_capture_goes_stale_and_never_recovers():
     states = replay("hr_offwrist.jsonl")
     first_stale = next(t for t, s in states if s is Presence.STALE)
-    assert 48.5 <= first_stale <= 50.0  # last value change at 18.7 s; frozen rule fires 30 s later
+    # last value change at 18.7 s; frozen rule fires frozen_stale_s later (~8 s)
+    assert 26.0 <= first_stale <= 28.0
     assert all(s is Presence.STALE for t, s in states if t >= first_stale)
 
 
@@ -82,4 +83,4 @@ def test_stats_shape_on_worn_capture():
     assert 950 <= s.median_gap_ms <= 1100
     assert s.max_gap_ms < 1500
     assert s.distinct_values_30s >= 2
-    assert s.frozen_for_ms < 30_000
+    assert s.frozen_for_ms < 8_000
