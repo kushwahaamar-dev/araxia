@@ -15,6 +15,6 @@ Track: **Finance**.
 | MLH / Challenge ElevenLabs | Not wired. Needs `ELEVENLABS_API_KEY` and a spoken verdict. | No. Do not tag until it speaks. |
 | MLH Backboard | Persistent agent memory of denials | Not built. Needs their key and a real job. |
 | MLH Presage | Camera vitals | Skipped. Competes with the Fitbit story we already measured. |
-| MathWorks | Handbook: bulk of project + in-silico medicine model | Skipped. We would lose on relevance. |
+| MathWorks | `analysis/presence_thresholds.m` re-derives the 8 s freeze gate from the raw captures and plots it. Offline analysis only; runtime is Python. | Tag `MATLAB` only after running it in MATLAB Online and attaching the PNG. Do **not** submit to the MathWorks prize — criteria (bulk in MATLAB, in-silico medicine) not met. |
 
-Devpost: tag every tool you actually ran. Do not tag MathWorks or Presage.
+Devpost: tag every tool you actually ran. Do not tag Presage.

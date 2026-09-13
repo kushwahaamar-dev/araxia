@@ -51,6 +51,8 @@ works on real rails. Pitch the layer; demo the product on top.
 24. `zod`
 25. `vitest`
 
+Optional swap: if you ran `analysis/presence_thresholds.m` in MATLAB Online and attached the PNG, replace `vitest` with `matlab`. Otherwise leave it out. Never submit to the MathWorks prize category.
+
 **Hackathon form answers (paste-ready)**
 
 ### Universities / schools

@@ -115,6 +115,7 @@ python -m pytest         # bridge (45)
 | `docs/` | Claims matrix, challenge mapping, Devpost copy, Notability shot list |
 | `capture/` | Scan/GATT JSON, heart-rate captures, `hardware_gate.md`, Android HCI notes |
 | `scripts/` | BLE research tooling (below) |
+| `analysis/` | MATLAB script that re-derives the 8 s freeze gate from the captures (offline; runtime is Python) |
 | `Dockerfile` | Builds the web service (`next build`), used for the Vultr evidence image |
 | `vendor/` | Reference-only RE material for older Fitbit / Mi Band stacks |
 
