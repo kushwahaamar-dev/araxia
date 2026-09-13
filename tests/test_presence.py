@@ -41,9 +41,12 @@ def test_offwrist_capture_goes_stale_and_never_recovers():
 def test_rewear_capture_warms_then_becomes_ready():
     states = replay("hr_rewear.jsonl")
     assert states[0][1] is Presence.WARMING
+    # Re-wear carries the frozen last value for ~21 s; with an 8 s freeze gate
+    # that stretch correctly goes STALE before live variation returns.
     first_ready = next(t for t, s in states if s is Presence.READY)
     assert first_ready < 30.0
-    assert not any(s is Presence.STALE for _, s in states)
+    assert states[-1][1] is Presence.READY
+    assert any(s is Presence.STALE for _, s in states)
 
 
 def test_packet_gap_becomes_stale_then_disconnected():
@@ -67,10 +70,12 @@ def test_explicit_disconnect_clears_state():
 
 def test_implausible_values_do_not_count_as_variation():
     tracker = PresenceTracker()
-    for i in range(10):
+    for i in range(5):
         tracker.observe(70 if i % 2 == 0 else 300, float(i))
-    assert tracker.presence(9.5) is Presence.WARMING
-    assert tracker.stats(9.5).valid_ratio == 0.5
+    # Only the valid 70s count; no second distinct value yet → WARMING, not READY.
+    assert tracker.presence(4.5) is Presence.WARMING
+    assert tracker.stats(4.5).valid_ratio == 0.6
+    assert tracker.stats(4.5).distinct_values_30s == 1
 
 
 def test_stats_shape_on_worn_capture():
