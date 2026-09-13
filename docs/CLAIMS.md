@@ -16,6 +16,10 @@ invites it.
 | Gemini proposes; the server revalidates op, payee, amount and currency against its own allowlist before an action exists. Prompt injection cannot add a payee. | `web/src/lib/gemini.ts`, `web/src/app/api/propose/route.ts` | That the model is part of the trust boundary. |
 | The demo runs fully locally on `localhost` over a phone hotspot. | runbook in `README.md` | Cloud deployment as part of the security model. |
 | We reverse-mapped the GATT surface of a 2026 device and documented the sharing gate and off-wrist behaviour. | `capture/gatt_sharing_on.json`, `capture/hardware_gate.md` | Access to Fitbit's proprietary encrypted sync channel. |
+| Nessie records every transfer we post (HTTP 201, `objectCreated._id` stored as the provider ref). Its sandbox leaves seeded balances frozen; the displayed balance overlays Araxia's confirmed executions and the UI says so. | `web/src/lib/executors/nessie.ts`, `web/src/lib/nessieSettlements.ts`, `web/test/nessieSettlements.test.ts`, live probe 2026-09-13 | That Nessie moved money between accounts. |
+| The same assertion executes on Solana devnet; the memo carries `araxia <nonce>` and every signature links to Solscan. | `web/src/lib/executors/solana.ts`, `web/test/solana.test.ts` | Mainnet, custody, or any token value. |
+| Passkey enrollment is gated on a Persona hosted inquiry (sandbox). No approved inquiry, no passkey, no money. | `web/src/lib/persona.ts`, `web/src/app/api/kyc/route.ts` | Real identity verification of the person; sandbox "Pass verification" is used in the demo. |
+| Several wearers can share one band: handoff is explicit and passkey-gated; a stream break followed by a different-looking wearer halts approvals until someone switches. | `bridge/wearers.py`, `tests/test_wearers.py`, `web/src/lib/wearers.ts` | That BPM tells us who is wearing the band. It is a hint that can only halt. |
 
 ## Trust boundary, stated plainly
 - Root of trust: the passkey and the issuer's Ed25519 key.

@@ -2,105 +2,135 @@
   <img src="logo.png" alt="Araxia" width="280" />
 </p>
 
-A presence-conditioned, action-bound authorization protocol. A passkey approves
-an exact action; a Fitbit Air stream must still be `READY` when the agent
-executes. The bank never sees a heartbeat.
+<p align="center"><b>A passkey approves one exact action. A wearable has to still be on a human when the agent executes it.</b></p>
+
+Araxia is a presence-conditioned, action-bound authorization protocol built at
+HackRice 16 (Finance track). An AI agent can propose a payment, but nothing
+moves unless (1) a WebAuthn passkey signs the digest of that exact action and
+(2) a Fitbit Air heart-rate stream is still `READY` at the moment of execution.
+The bank never sees a heartbeat; it sees a signed assertion it can verify offline.
 
 Repo: https://github.com/kushwahaamar-dev/araxia
 
-Claims we make, and the ones we do not: [`docs/CLAIMS.md`](docs/CLAIMS.md).
-Hardware facts: [`capture/hardware_gate.md`](capture/hardware_gate.md).
+- What we claim, and what we refuse to claim: [`docs/CLAIMS.md`](docs/CLAIMS.md)
+- Measured hardware facts (GATT surface, off-wrist behaviour, thresholds): [`capture/hardware_gate.md`](capture/hardware_gate.md)
+- Prize/challenge mapping: [`docs/challenges.md`](docs/challenges.md)
+- Devpost copy: [`docs/devpost.md`](docs/devpost.md)
 
-## Demo (localhost)
+## How it works
 
-```bash
-# 1. Python bridge
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
-# Google Health → Connections → Fitbit Air → Share heart rate ON (Always visible).
-# First connection only: tap Get started while the Mac is connected.
-python -m bridge.main run --address <BLE-UUID> --user u_amar --register
-
-# 2. Service (other terminal)
-cd web
-cp .env.example .env.local   # fill NESSIE_API_KEY and account ids
-npm install
-npm run dev                  # http://localhost:3000
+```
+Fitbit Air ──BLE 0x180D──▶ bridge (Python) ──signed window stats──▶ Araxia service (Next.js)
+                                                                        │
+      agent / Gemini proposes ─▶ server revalidates ─▶ action digest ───┤
+      passkey (Touch ID) signs the digest ─▶ Ed25519 assertion ─────────┤
+                                                                        ▼
+                                          presence READY? ──▶ executor ──▶ Nessie / Solana devnet
 ```
 
-Register a passkey in the console, create `$45 to RENT`, Approve with Touch ID,
-Execute. Attack lab: mutate amount, replay, take the band off and wait 30 s.
+1. **Presence.** The bridge subscribes to the band's Heart Rate Service and
+   computes presence from *variation*, not packet arrival. The Air keeps
+   sending its last BPM forever after it comes off the wrist, so a frozen value
+   for 8 s flips the state to `STALE`. Raw BPM never leaves the machine; the
+   service receives Ed25519-signed window statistics.
+2. **Action.** Manual form or Gemini proposal. The server rebuilds the
+   canonical action (op, payee, amount, currency, nonce, expiry) against its
+   own allowlist. Prompt injection cannot add a payee.
+3. **Approval.** The WebAuthn challenge *is* the action digest. Touch ID signs
+   it; the issuer wraps the result in an Ed25519 assertion over RFC 8785
+   canonical JSON. Change one byte and verification fails.
+4. **Execution.** The assertion is single-use (nonce claimed atomically) and
+   presence is re-checked immediately before the executor runs. Rails:
+   Capital One Nessie sandbox and Solana devnet (memo binds the nonce; every
+   signature opens on Solscan).
+5. **Verification.** `npx araxia-verify assertion assertion.json --issuer <hex>`
+   checks any exported assertion with no access to our service.
 
-```bash
-# Independent verifier (after you download assertion.json from the console)
-npx araxia-verify assertion assertion.json --issuer <issuer public hex>
-```
+### Team handoff
+
+Several people can share one band. Persona (sandbox) gates passkey enrollment;
+the console shows who has a passkey and lets a teammate verify, enrol, and
+take over the wearer session. When the stream breaks and resumes on a
+different-looking wearer, approvals halt until someone switches explicitly.
+
+### Small One (`/bank`)
+
+A fictional consumer bank UI on the same protocol: pick a rail, write a memo,
+approve with Touch ID, execute. Nessie records every transfer, but its sandbox
+leaves seeded balances frozen (verified live; `payee_id` is rejected by the
+current `TransferCreate` schema). The displayed balance overlays Araxia's
+confirmed settlements on the seeded figure and says so on screen.
+
+## Run it (localhost, macOS)
 
 ```bash
 git clone --recurse-submodules https://github.com/kushwahaamar-dev/araxia.git
+cd araxia
+
+# 1. Bridge
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+# Google Health app → Connections → Fitbit Air → Share heart rate ON, "Always visible" ON.
+# First connection only: tap "Get started" in the app while the Mac is connected.
+python -m bridge.main run --address <BLE-UUID> --user u_amar --register
+
+# 2. Service (second terminal)
+cd web
+cp .env.example .env.local        # fill NESSIE_API_KEY, account ids, and any optional rails
+npm install
+npm run dev                       # http://localhost:3000  (console)  ·  /bank (Small One)
+```
+
+Grant Bluetooth permission to Terminal when macOS asks. `scripts/scan_ble.py`
+prints the band's CoreBluetooth UUID once heart-rate sharing is on.
+
+In the console: register a passkey, create `$45 to RENT`, Approve with Touch
+ID, Execute. Open `./attack` to mutate the amount, replay the assertion, or
+take the band off and watch the approval blocker appear within ~8 s.
+
+### Tests
+
+```bash
+npm test                 # @araxia/verify (30) + web (90)
+python -m pytest         # bridge (45)
 ```
 
 ## Layout
 
 | Path | What |
 |---|---|
-| `bridge/` | BLE collector, presence, wearer model, signed envelopes |
-| `packages/verify/` | Independent assertion/envelope verifier + `araxia-verify` CLI |
-| `web/` | Next.js service, passkeys, policy, Nessie executor, console |
-| `docs/CLAIMS.md` | What we claim and what we do not |
-| `scripts/scan_ble.py` | Scan nearby BLE; flag Fitbit-like ads |
-| `scripts/dump_gatt.py` | Connect + dump GATT tree → `dump.txt` |
-| `scripts/sniff_notify.py` | Subscribe to notify/indicate and log payloads |
-| `scripts/wait_for_hr.py` | Block until a device advertises Heart Rate Service `0x180D` |
-| `scripts/hr_stream.py` | Decode live `0x2A37` heart-rate packets to JSONL with summary stats |
-| `capture/hardware_gate.md` | Measured facts: what the Air exposes, off-wrist behaviour, thresholds |
-| `capture/` | Scan/GATT JSON, HR captures, Android HCI snoop notes |
-| `vendor/fitness-app` | SEEMOO Fitbit Android RE (older models) |
-| `vendor/BreakMi` | BLE fitness toolkit (Mi Band + some Fitbit Charge 2) |
+| `bridge/` | BLE collector, HRS decoder, variation-based presence, wearer/handoff model, signed envelopes |
+| `packages/verify/` | Independent assertion/envelope verifier and the `araxia-verify` CLI (shared test vectors with the bridge) |
+| `web/` | Next.js service: passkeys, policy, Ed25519 issuer, Nessie + Solana executors, Gemini propose, Persona KYC, TigerData replica, console and Small One UI |
+| `docs/` | Claims matrix, challenge mapping, Devpost copy, Notability shot list |
+| `capture/` | Scan/GATT JSON, heart-rate captures, `hardware_gate.md`, Android HCI notes |
+| `scripts/` | BLE research tooling (below) |
+| `Dockerfile` | Builds the web service (`next build`), used for the Vultr evidence image |
+| `vendor/` | Reference-only RE material for older Fitbit / Mi Band stacks |
 
-Older vendor tools are **reference only**. Fitbit Air (2026 / GW9C8) uses a newer stack; expect encrypted sync payloads.
+## Trust boundary, plainly
 
-## Setup (macOS)
+- Root of trust: the passkey and the issuer's Ed25519 key.
+- Condition: fresh `READY` evidence from an enrolled bridge key, checked at approval and again at execution.
+- The bridge is a trusted collector. Envelope signatures stop replay and tampering on the wire; they do not prove the sensor.
+- The per-wearer BPM model only lowers assurance (step-up). It never grants and it never identifies.
+- Wearable = liveness. Passkey = identity. Heart rate is not a password.
 
-```bash
-cd /Users/amar/Codes/ak/rice
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
+## Hardware research tooling
 
-Grant **Bluetooth** permission to Terminal when macOS prompts.
-
-## Workflow
+Everything under `scripts/` was used to characterise the 2026 Fitbit Air
+(model 67). Results are in `capture/hardware_gate.md`.
 
 ```bash
-# 1) Find the Air (put it in pairing / wake it; keep phone sync idle if possible)
-python scripts/scan_ble.py --seconds 15
-
-# 2) Dump GATT (use address/UUID from scan.json)
-python scripts/dump_gatt.py <ADDRESS> --read
-
-# 3) Live notify sniff while you move / wait for HR updates
+python scripts/scan_ble.py --seconds 15          # find the band, flag Fitbit-like adverts
+python scripts/dump_gatt.py <ADDRESS> --read     # GATT tree → capture/gatt.json, dump.txt
 python scripts/sniff_notify.py <ADDRESS> --seconds 45
-
-# 4) Live heart rate. In Google Health: Connections -> Fitbit Air -> Share heart rate ON.
-#    First connection only: tap "Get started" / confirm in the app while connected.
-python scripts/wait_for_hr.py            # prints the address once 0x180D is advertised
-python scripts/hr_stream.py <ADDRESS> --label worn --seconds 120
+python scripts/wait_for_hr.py                    # block until 0x180D is advertised
+python scripts/hr_stream.py <ADDRESS> --label worn --seconds 120   # decode 0x2A37 → JSONL
 ```
 
-Outputs:
-
-- `capture/scan.json`
-- `capture/gatt.json`
-- `dump.txt` (human-readable GATT)
-- `capture/notify.log`
-
-## Full sync packets (Android)
-
-Phone↔tracker sync is hard to MITM from Mac alone. See `capture/android_hci_snoop.md`.
-
-## Notes
-
-- Only use this on hardware you own.
-- If scan finds nothing: Air may be bonded only to the phone and not advertising. Unpair briefly, or capture HCI on the phone during sync.
+Findings that shaped the design: the Air exposes only a smoothed BPM integer
+at ~0.5 Hz effective rate (no RR intervals, no skin-contact bit, no
+temperature, no motion), and it freezes on the last value when removed
+instead of stopping. Phone↔tracker sync is encrypted; see
+`capture/android_hci_snoop.md`. Only use these tools on hardware you own.
