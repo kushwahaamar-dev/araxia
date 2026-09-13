@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nessieExecutor } from "@/lib/executors/nessie";
+import { executorFor } from "@/lib/executors/pick";
 import { runExecution } from "@/lib/executors/run";
 import { errorResponse, parseBody } from "@/lib/http";
 import { assertionSchema } from "@/lib/schemas";
@@ -13,6 +13,6 @@ export async function POST(req: Request): Promise<Response> {
   } catch (e) {
     return errorResponse(e);
   }
-  const result = await runExecution(assertion, nessieExecutor(), "api/execute");
+  const result = await runExecution(assertion, executorFor(assertion.action.aud), "api/execute");
   return Response.json(result, { status: result.outcome === "EXECUTED" ? 200 : 403 });
 }

@@ -72,6 +72,20 @@ describe("buildAction", () => {
     expect(() => buildAction({ ...valid, op: "nessie.withdrawal" })).toThrow(ActionError);
   });
 
+  it("binds a Solana transfer to the devnet rail and SOL units", () => {
+    const a = buildAction({
+      op: "solana.transfer",
+      dst: "Cxt17a9cVjuztfPV3vcBKuBNEDj9f6J4kth9vRdfbW1S",
+      amount_minor: 5000,
+      ccy: "USD",
+      reason: "DEVNET",
+    });
+    expect(a.aud).toBe("solana-devnet");
+    expect(a.ccy).toBe("SOL");
+    expect(a.dst).toBe("Cxt17a9cVjuztfPV3vcBKuBNEDj9f6J4kth9vRdfbW1S");
+    expect(a.amount_minor).toBe(5000);
+  });
+
   it("rejects malformed ccy and reason", () => {
     expect(() => buildAction({ ...valid, ccy: "usd" })).toThrow(ActionError);
     expect(() => buildAction({ ...valid, ccy: "USDC" })).toThrow(ActionError);

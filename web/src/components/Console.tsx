@@ -79,6 +79,8 @@ export function Console() {
         issuerKid={status?.issuer.kid ?? null}
         policyHash={status?.policy_hash ?? null}
         passkeys={passkeys}
+        kyc={status?.kyc}
+        rails={status?.rails}
         onPasskeysChanged={loadPasskeys}
       />
       <main className="grid grid-cols-1 gap-3 lg:grid-cols-[300px_minmax(0,1fr)_380px]">

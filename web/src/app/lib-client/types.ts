@@ -65,6 +65,14 @@ export interface StatusResponse {
   policy_hash: string;
   bridges: Array<{ bridge_id: string; pubkey_hex: string }>;
   executions: ExecutionRow[];
+  kyc?: {
+    configured: boolean;
+    user_id?: string;
+    inquiry_id?: string | null;
+    status?: string;
+    hosted_url?: string | null;
+  };
+  rails?: { nessie: boolean; solana: string | null };
 }
 
 export interface Passkey {

@@ -26,7 +26,7 @@ interface Props {
 type Tab = "manual" | "gemini";
 type Busy = "propose" | "create" | "approve" | "execute" | null;
 
-const OPS = ["nessie.transfer"] as const;
+const OPS = ["nessie.transfer", "solana.transfer"] as const;
 const EMPTY_PIPELINE: PipelineState = { stamps: {}, terminal: null, providerRef: null, note: null };
 
 function parseDollars(input: string): number | null {
@@ -34,6 +34,13 @@ function parseDollars(input: string): number | null {
   if (!/^\d+(\.\d{1,2})?$/.test(s)) return null;
   const minor = Math.round(Number(s) * 100);
   return minor > 0 ? minor : null;
+}
+
+function parseLamports(input: string): number | null {
+  const s = input.trim();
+  if (!/^\d+$/.test(s)) return null;
+  const n = Number(s);
+  return n > 0 ? n : null;
 }
 
 export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props) {
@@ -64,14 +71,24 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
 
   const onCreate = async (e: FormEvent) => {
     e.preventDefault();
-    const minor = parseDollars(amount);
+    const minor = op === "solana.transfer" ? parseLamports(amount) : parseDollars(amount);
     if (minor === null) {
-      setError("amount must be a positive dollar value with at most two decimals");
+      setError(
+        op === "solana.transfer"
+          ? "amount must be a positive integer of lamports"
+          : "amount must be a positive dollar value with at most two decimals",
+      );
       return;
     }
     setBusy("create");
     setError(null);
-    const r = await createAction(userId, "manual", { op, dst: payee.trim(), amount_minor: minor, ccy: "USD", reason: reason.trim() });
+    const r = await createAction(userId, "manual", {
+      op,
+      dst: payee.trim(),
+      amount_minor: minor,
+      ccy: op === "solana.transfer" ? "SOL" : "USD",
+      reason: reason.trim(),
+    });
     setBusy(null);
     if (r.status >= 200 && r.status < 300 && r.body && !isApiError(r.body)) startFlow(r.body, null);
     else setError(errorText(r, "could not create action"));
@@ -174,7 +191,23 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
         <form id="tabpanel-manual" role="tabpanel" aria-labelledby="tab-manual" className="grid grid-cols-2 gap-2 md:grid-cols-[1fr_1fr_1fr_1fr_auto]" onSubmit={onCreate}>
           <label className="flex flex-col gap-px text-[11px] text-dim">
             op
-            <select className="field" value={op} onChange={(e) => setOp(e.target.value)}>
+            <select
+              className="field"
+              value={op}
+              onChange={(e) => {
+                const next = e.target.value;
+                setOp(next);
+                if (next === "solana.transfer") {
+                  setPayee("DEVNET");
+                  setAmount("5000");
+                  setReason("DEVNET");
+                } else {
+                  setPayee("RENT");
+                  setAmount("45.00");
+                  setReason("RENT");
+                }
+              }}
+            >
               {OPS.map((o) => (
                 <option key={o} value={o}>
                   {o}
@@ -187,7 +220,7 @@ export function ActionPanel({ userId, now, approveBlocker, onAssertion }: Props)
             <input className="field font-mono" value={payee} onChange={(e) => setPayee(e.target.value)} required />
           </label>
           <label className="flex flex-col gap-px text-[11px] text-dim">
-            amount (USD)
+            {op === "solana.transfer" ? "lamports" : "amount (USD)"}
             <input className="field font-mono" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} required />
           </label>
           <label className="flex flex-col gap-px text-[11px] text-dim">

@@ -13,7 +13,10 @@ export async function POST(req: Request) {
 
   let proposal;
   try {
-    proposal = await proposeWithGemini(prompt, { payees: Object.keys(ALLOWED_PAYEES), balanceMinor: null });
+    proposal = await proposeWithGemini(prompt, {
+      payees: Object.keys(ALLOWED_PAYEES).filter((label) => label !== "DEVNET"),
+      balanceMinor: null,
+    });
   } catch (e) {
     const message = e instanceof GeminiError ? e.message : "proposal failed";
     logEvent("propose.failed", { user_id, message });

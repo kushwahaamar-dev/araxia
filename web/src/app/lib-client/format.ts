@@ -1,4 +1,5 @@
 export function dollars(minor: number, ccy = "USD"): string {
+  if (ccy === "SOL") return `${minor} lamports`;
   try {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: ccy }).format(minor / 100);
   } catch {

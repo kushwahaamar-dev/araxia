@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { actionDigest, MAX_ACTION_LIFETIME_S, type CanonicalAction } from "@araxia/verify";
 import { z } from "zod";
 import { getDb, nowMs, nowS } from "./db";
+import { solanaAddress } from "./executors/solana";
 
 export class ActionError extends Error {
   constructor(message: string) {
@@ -14,11 +15,20 @@ export class ActionError extends Error {
 }
 
 function loadPayees(): Record<string, string> {
+  const fallback: Record<string, string> = { RENT: "demo_rent", SAVINGS: "demo_savings" };
+  let base: Record<string, string> = fallback;
   const raw = process.env.ARAXIA_PAYEES_JSON;
-  if (!raw) return { RENT: "demo_rent", SAVINGS: "demo_savings" };
-  const parsed = z.record(z.string().min(1), z.string().min(1)).safeParse(JSON.parse(raw));
-  if (!parsed.success) throw new Error("ARAXIA_PAYEES_JSON must be a JSON object of label -> account id");
-  return parsed.data;
+  if (raw) {
+    try {
+      const parsed = z.record(z.string(), z.string()).parse(JSON.parse(raw));
+      const filled = Object.fromEntries(Object.entries(parsed).filter(([, v]) => v.length > 0));
+      if (Object.keys(filled).length > 0) base = filled;
+    } catch {
+      base = fallback;
+    }
+  }
+  const sol = process.env.SOLANA_PAYEE;
+  return sol ? { ...base, DEVNET: sol } : base;
 }
 
 export const ALLOWED_PAYEES: Readonly<Record<string, string>> = loadPayees();
@@ -51,10 +61,13 @@ export interface ActionInput {
 }
 
 // Accepts a payee label or its account id; always emits the account id.
-function resolvePayee(dst: string): string {
+const SOLANA_PUBKEY = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+function resolvePayee(dst: string, op: Op): string {
   const byLabel = ALLOWED_PAYEES[dst];
   if (byLabel !== undefined) return byLabel;
   if (Object.values(ALLOWED_PAYEES).includes(dst)) return dst;
+  if (op === "solana.transfer" && SOLANA_PUBKEY.test(dst)) return dst;
   throw new ActionError("payee not allowed");
 }
 
@@ -69,10 +82,10 @@ export function buildAction(input: ActionInput): CanonicalAction {
     v: 1,
     op,
     aud: AUD_FOR_OP[op],
-    src: SOURCE_ACCOUNT,
-    dst: resolvePayee(dst),
+    src: op === "solana.transfer" ? (solanaAddress() ?? "solana-relayer") : SOURCE_ACCOUNT,
+    dst: resolvePayee(dst, op),
     amount_minor,
-    ccy,
+    ccy: op === "solana.transfer" ? "SOL" : ccy,
     reason,
     nonce: "n_" + randomBytes(32).toString("base64url"),
     exp: nowS() + MAX_ACTION_LIFETIME_S,

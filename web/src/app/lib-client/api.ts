@@ -13,7 +13,7 @@ export function isApiError(body: unknown): body is { error: string } {
 
 export async function api<T = unknown>(
   path: string,
-  init?: { method?: "GET" | "POST"; body?: unknown; signal?: AbortSignal },
+  init?: { method?: "GET" | "POST" | "PUT"; body?: unknown; signal?: AbortSignal },
 ): Promise<ApiResult<T>> {
   let res: Response;
   try {

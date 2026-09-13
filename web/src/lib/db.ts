@@ -91,6 +91,13 @@ CREATE TABLE IF NOT EXISTS operational_events (
   kind TEXT NOT NULL,
   detail_json TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS kyc (
+  user_id TEXT PRIMARY KEY,
+  inquiry_id TEXT,
+  status TEXT NOT NULL DEFAULT 'none',
+  hosted_url TEXT,
+  updated_at INTEGER NOT NULL
+);
 `;
 
 let db: Database.Database | null = null;
