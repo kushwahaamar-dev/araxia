@@ -127,7 +127,7 @@ export function Console() {
         <footer className="flex flex-col gap-2 border-t border-line px-1 pt-4 text-[11px] text-dim sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2">
             <img src="/logo-white.png" alt="" className="h-3.5 w-auto opacity-70" />
-            <span>© {YEAR}. Capital One Nessie sandbox — not a bank, not advice.</span>
+            <span>© {YEAR}. Small One — demo only, not advice.</span>
           </p>
           <p className="flex flex-wrap gap-x-4 gap-y-1">
             <a className="hover:text-accent" href="mailto:amkushwa@ttu.edu">

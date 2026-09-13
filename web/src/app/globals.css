@@ -137,8 +137,11 @@ body {
 .banking-header { background: #102a43; color: white; border-bottom: 4px solid #d9272e; }
 .banking-header-inner, .banking-main { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
 .banking-header-inner { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.brand-lockup { display: inline-flex; align-items: center; gap: 11px; font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
+.brand-lockup { display: inline-flex; align-items: center; gap: 11px; }
 .brand-mark { width: 20px; height: 20px; display: inline-block; background: #d9272e; transform: skew(-18deg); border-radius: 1px; box-shadow: 9px 0 0 #ef5b61; }
+.brand-wordmark { display: inline-flex; align-items: baseline; gap: 5px; line-height: 1; }
+.brand-small { font-size: 15px; font-weight: 750; letter-spacing: .02em; color: #fff; }
+.brand-one { font-size: 24px; font-weight: 600; letter-spacing: -.04em; color: #b8c8d9; }
 .brand-muted { font-weight: 400; color: #b8c8d9; }
 .header-meta, .header-user { display: flex; align-items: center; gap: 15px; }
 .nessie-label { font-size: 10px; font-weight: 700; letter-spacing: .14em; color: #b8c8d9; }

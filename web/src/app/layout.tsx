@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s — Araxia",
   },
   description:
-    "Araxia decides whether this exact action, approved by this present human, may execute. Capital One Nessie sandbox. Not a bank.",
+    "Small One is a demo bank. Araxia decides whether this exact action, approved by this present human, may execute. Not a real bank.",
   applicationName: "Araxia",
   icons: {
     icon: [

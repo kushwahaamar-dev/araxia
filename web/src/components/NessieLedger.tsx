@@ -30,14 +30,14 @@ function accountRow(a: NonNullable<StatusResponse["nessie"]>["source"]) {
 export function NessieLedger({ ledger }: { ledger: StatusResponse["nessie"] | undefined }) {
   if (!ledger) {
     return (
-      <Panel title="Capital One Nessie" right={<StateBadge value="SANDBOX" tone="warn" />}>
-        <p className="text-[12px] text-dim">reading Capital One sandbox…</p>
+      <Panel title="Small One ledger" right={<StateBadge value="DEMO" tone="warn" />}>
+        <p className="text-[12px] text-dim">reading Small One ledger…</p>
       </Panel>
     );
   }
   if (!ledger.configured) {
     return (
-      <Panel title="Capital One Nessie" right={<StateBadge value="SANDBOX" tone="warn" />}>
+      <Panel title="Small One ledger" right={<StateBadge value="DEMO" tone="warn" />}>
         <p className="text-[12px] text-dim">NESSIE_API_KEY is not configured.</p>
       </Panel>
     );
@@ -48,10 +48,10 @@ export function NessieLedger({ ledger }: { ledger: StatusResponse["nessie"] | un
 
   return (
     <Panel
-      title="Capital One Nessie"
+      title="Small One ledger"
       right={
         <span className="flex items-center gap-2">
-          <StateBadge value="SANDBOX" tone="warn" />
+          <StateBadge value="DEMO" tone="warn" />
           <StateBadge value={ledger.reachable ? "LIVE" : "UNREACHABLE"} tone={ledger.reachable ? "ok" : "bad"} />
         </span>
       }
@@ -106,8 +106,8 @@ export function NessieLedger({ ledger }: { ledger: StatusResponse["nessie"] | un
         </div>
       )}
       <p className="text-[11px] text-dim">
-        Live Capital One sandbox. Transfers are recorded with the assertion nonce in the description. This Nessie
-        revision does not move the seeded balances.
+        Small One settles on Capital One Nessie. Transfers are recorded with the assertion nonce in the description.
+        This Nessie revision does not move the seeded balances.
       </p>
     </Panel>
   );
