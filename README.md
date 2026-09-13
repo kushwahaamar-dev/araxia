@@ -2,13 +2,20 @@
   <img src="logo.png" alt="Araxia" width="280" />
 </p>
 
-<p align="center"><b>A passkey approves one exact action. A wearable has to still be on a human when the agent executes it.</b></p>
+<p align="center"><b>A presence-conditioned, action-bound authorization protocol.</b><br/>
+Passkey signs one exact action. Wearable liveness must hold at execute.<br/>
+Drop it under any agentic product — the bank never sees a heartbeat.</p>
 
-Araxia is a presence-conditioned, action-bound authorization protocol built at
-HackRice 16 (Finance track). An AI agent can propose a payment, but nothing
-moves unless (1) a WebAuthn passkey signs the digest of that exact action and
-(2) a Fitbit Air heart-rate stream is still `READY` at the moment of execution.
-The bank never sees a heartbeat; it sees a signed assertion it can verify offline.
+Araxia is a **security / authentication / enforcement layer**, not a bank.
+Any product (payments, ops, privileged access) can sit on top: the app
+proposes an action; Araxia requires a WebAuthn passkey over that action's
+digest and a live wearable presence stream (`READY`) at execution. Downstream
+systems verify a signed assertion offline — physiology never leaves the
+wearer's machine.
+
+Built at HackRice 16 (Finance track). The tty console and "Small One" bank UI
+are **reference use cases** that exercise the protocol on Capital One Nessie
+and Solana devnet.
 
 Repo: https://github.com/kushwahaamar-dev/araxia
 
@@ -53,13 +60,15 @@ the console shows who has a passkey and lets a teammate verify, enrol, and
 take over the wearer session. When the stream breaks and resumes on a
 different-looking wearer, approvals halt until someone switches explicitly.
 
-### Small One (`/bank`)
+### Reference apps
 
-A fictional consumer bank UI on the same protocol: pick a rail, write a memo,
-approve with Touch ID, execute. Nessie records every transfer, but its sandbox
-leaves seeded balances frozen (verified live; `payee_id` is rejected by the
-current `TransferCreate` schema). The displayed balance overlays Araxia's
-confirmed settlements on the seeded figure and says so on screen.
+- **`/`** — tty control plane for the protocol (presence, team, attack lab).
+- **`/bank` (Small One)** — fictional consumer bank *on top of* Araxia: pick a
+  rail, write a memo, approve with Touch ID, execute. Proves the layer is
+  rail-agnostic. Nessie records every transfer, but its sandbox leaves seeded
+  balances frozen (verified live; `payee_id` is rejected by the current
+  `TransferCreate` schema). The displayed balance overlays Araxia's confirmed
+  settlements on the seeded figure and says so on screen.
 
 ## Run it (localhost, macOS)
 
