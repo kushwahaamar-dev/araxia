@@ -33,10 +33,25 @@ function money(value: string): string {
   return Number.isFinite(n) ? `$${n.toFixed(2)}` : "$0.00";
 }
 
+function recipientLabel(dst: string): string {
+  if (dst === "demo_rent" || dst === "RENT") return "RENT";
+  if (dst === "demo_savings" || dst === "SAVINGS") return "Savings";
+  return dst;
+}
+
+function initials(label: string): string {
+  return label
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
 export function BankingDemo() {
   const now = useNow(250);
   const [stage, setStage] = useState<Stage>("entry");
-  const [source] = useState("Everyday Checking ···· 4821");
+  const [userId, setUserId] = useState(DEMO_USER);
   const [recipient, setRecipient] = useState("RENT");
   const [amount, setAmount] = useState("45.00");
   const [description, setDescription] = useState("September rent");
@@ -56,26 +71,45 @@ export function BankingDemo() {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const poll = async () => {
       const [s, p] = await Promise.all([
-        api<StatusResponse>(`/api/status?user=${encodeURIComponent(DEMO_USER)}`),
-        api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(DEMO_USER)}`),
+        api<StatusResponse>(`/api/status?user=${encodeURIComponent(userId)}`),
+        api<{ passkeys: Passkey[] }>(`/api/passkeys?user=${encodeURIComponent(userId)}`),
       ]);
       if (cancelled) return;
-      if (s.status >= 200 && s.status < 300 && s.body) { setStatus(s.body); setReachable(true); } else setReachable(false);
+      if (s.status >= 200 && s.status < 300 && s.body && "evidence" in s.body) {
+        setStatus(s.body);
+        setReachable(true);
+        // The bank acts for whoever the console says is wearing the band.
+        const active = s.body.wearer?.active_user;
+        if (active && active !== userId && !s.body.wearer?.halt) setUserId(active);
+      } else setReachable(false);
       if (p.status >= 200 && p.status < 300 && p.body && Array.isArray(p.body.passkeys)) setPasskeys(p.body.passkeys);
       timer = setTimeout(poll, 1000);
     };
     void poll();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, []);
+  }, [userId]);
 
   const readiness = statusCopy(status, reachable);
   const kycBlocked = status?.kyc?.configured === true && !["approved", "completed"].includes(status.kyc.status ?? "");
+  const halted = status?.wearer?.halt === true;
   const actionExpired = created ? secondsUntil(created.action.exp, now) === 0 : false;
   const amountError = !/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0 ? "Enter a positive amount with up to two decimal places." : null;
   const recipientName = recipient === "RENT" ? "RENT · Monthly rent" : "Savings · Internal transfer";
   const receiptStatus = result && result.outcome === "EXECUTED" ? result.status : undefined;
   const receiptMessage = result?.outcome === "DENIED" ? result.reason : result?.outcome === "EXECUTED" ? (result.status === "CONFIRMED" ? "Small One accepted your transfer request." : result.note ?? "The transfer was not confirmed.") : "The transfer was not confirmed.";
-  const canApprove = Boolean(created && !actionExpired && reachable && passkeys.length > 0 && status?.evidence?.presence === "READY" && status.fresh && !kycBlocked);
+  const canApprove = Boolean(created && !actionExpired && reachable && passkeys.length > 0 && status?.evidence?.presence === "READY" && status.fresh && !kycBlocked && !halted);
+
+  const fallbackName = userId.replace(/^u_/, "").replace(/^./, (c) => c.toUpperCase());
+  const holder = status?.wearer?.team.find((p) => p.user_id === userId)?.label ?? fallbackName;
+  const firstName = holder.split(/\s+/)[0] ?? holder;
+  const account = status?.nessie?.source ?? null;
+  const accountName = account?.nickname ?? account?.label ?? "Checking";
+  const accountTail = account ? `...${account.id.slice(-4)}` : "";
+  const source = accountTail ? `${accountName} ${accountTail}` : accountName;
+  const balance = account?.balance_minor != null ? dollars(account.balance_minor, "USD") : "—";
+  const presenceOk = status?.evidence?.presence === "READY";
+  const continuityOk = !halted && status?.evidence?.drift !== "DRIFTING";
+  const freshOk = status?.fresh === true;
 
   const startReview = (e: FormEvent) => {
     e.preventDefault(); setError(null);
@@ -85,7 +119,7 @@ export function BankingDemo() {
 
   const create = async () => {
     setBusy("create"); setError(null);
-    const r = await createAction(DEMO_USER, "manual", { op: "nessie.transfer", dst: recipient, amount_minor: Math.round(Number(amount) * 100), ccy: "USD", reason: description.trim() });
+    const r = await createAction(userId, "manual", { op: "nessie.transfer", dst: recipient, amount_minor: Math.round(Number(amount) * 100), ccy: "USD", reason: description.trim() });
     setBusy(null);
     if (r.status >= 200 && r.status < 300 && r.body && !isApiError(r.body)) { setCreated(r.body); setStage("authorize"); }
     else setError(errorText(r, "We could not prepare this transfer"));
@@ -94,7 +128,7 @@ export function BankingDemo() {
   const approve = async () => {
     if (!created) return;
     setBusy("approve"); setError(null);
-    const r = await runApproval(DEMO_USER, created.action_digest);
+    const r = await runApproval(userId, created.action_digest);
     setBusy(null);
     if (!r.decision) { setError(r.error ?? "Passkey approval failed"); return; }
     setDecision(r.decision);
@@ -116,13 +150,15 @@ export function BankingDemo() {
 
   const blocker = useMemo(() => {
     if (!reachable) return "Service unavailable";
+    if (actionExpired) return "This authorization expired. Start over.";
+    if (halted) return "The wearer changed. Confirm who is wearing the band in the Protocol Console.";
     if (kycBlocked) return "Complete Persona verification in the Protocol Console first";
     if (!passkeys.length) return "Register a passkey in the Protocol Console first";
     if (!status?.evidence) return "Waiting for wearable evidence";
     if (status.evidence.presence !== "READY") return `Presence is ${status.evidence.presence.toLowerCase()}`;
     if (!status.fresh) return "Evidence is older than 3 seconds";
     return null;
-  }, [kycBlocked, passkeys.length, reachable, status]);
+  }, [actionExpired, halted, kycBlocked, passkeys.length, reachable, status]);
 
   const reset = () => { setStage("entry"); setCreated(null); setDecision(null); setAssertion(null); setResult(null); setError(null); setDetailsOpen(false); };
   const inspectHref = "/?focus=latest";
@@ -132,16 +168,16 @@ export function BankingDemo() {
       <header className="banking-header">
         <div className="banking-header-inner">
           <Link href="/bank" className="brand-lockup" aria-label="Small One home"><span className="brand-mark" aria-hidden="true" /> <span className="brand-wordmark"><span className="brand-small">small</span> <span className="brand-one">One</span></span></Link>
-          <div className="header-meta"><span className="nessie-label">PRESENCE PAY</span><span className="header-user">Amar K. <span className="avatar">AK</span></span></div>
+          <div className="header-meta"><span className="nessie-label">PRESENCE PAY</span><span className="header-user">{holder} <span className="avatar">{initials(holder)}</span></span></div>
         </div>
       </header>
 
       <main className="banking-main">
-        <div className="banking-topline"><div><p className="eyebrow">Good morning, Amar</p><h1>Move money</h1></div><a className="protocol-link" href={inspectHref}>Protocol Console <span aria-hidden="true">↗</span></a></div>
+        <div className="banking-topline"><div><p className="eyebrow">Welcome back, {firstName}</p><h1>Move money</h1></div><a className="protocol-link" href={inspectHref}>Protocol Console <span aria-hidden="true">↗</span></a></div>
 
-        <section className="account-card" aria-label="Everyday Checking account">
-          <div><p className="eyebrow light">YOUR ACCOUNT</p><h2>Everyday Checking</h2><p className="account-number">...4821</p></div>
-          <div className="balance"><span>Available balance</span><strong>$2,840.16</strong><small>As of today</small></div>
+        <section className="account-card" aria-label={`${accountName} account`}>
+          <div><p className="eyebrow light">YOUR ACCOUNT</p><h2>{accountName}</h2><p className="account-number">{accountTail || "Sandbox"}</p></div>
+          <div className="balance"><span>Available balance</span><strong>{balance}</strong><small>{account ? "Nessie sandbox · as of now" : "Ledger unavailable"}</small></div>
         </section>
 
         <div className="banking-grid">
@@ -159,12 +195,12 @@ export function BankingDemo() {
 
             {stage === "review" && <div className="flow-panel"><p className="section-kicker">Review transfer</p><h2>Check the details before continuing</h2><p className="muted">Nothing has moved yet. You&apos;ll authorize this exact transfer with your passkey.</p><dl className="review-list"><div><dt>From</dt><dd>{source}</dd></div><div><dt>To</dt><dd>{recipientName}</dd></div><div><dt>Amount</dt><dd className="review-amount">{money(amount)}</dd></div><div><dt>Description</dt><dd>{description || "—"}</dd></div><div><dt>Execution network</dt><dd>Small One</dd></div></dl><div className="form-actions"><button className="bank-button" onClick={() => void create()} disabled={busy !== null}>{busy === "create" ? "Preparing…" : "Continue to authorization"}</button><button className="text-button" onClick={() => setStage("entry")}>Edit transfer</button></div>{error && <p className="inline-error" role="alert">{error}</p>}</div>}
 
-            {stage === "authorize" && <div className="flow-panel"><div className="authorization-heading"><div><p className="section-kicker">Araxia authorization</p><h2>Confirm it&apos;s really you</h2></div><StateBadge value={decision?.decision === "APPROVED" ? "APPROVED" : "SECURE CHECK"} tone={decision?.decision === "APPROVED" ? "ok" : "neutral"} /></div><p className="muted">Your passkey approves the exact transfer below. Wearable presence must still be current when the transfer executes.</p><div className="locked-transfer"><span className="lock-icon" aria-hidden="true">⌑</span><div><strong>{money(amount)} to {recipientName}</strong><span>{description || "No description"}</span></div><span className="locked-word">LOCKED</span></div><div className="auth-checks"><div><span className="check-icon">✓</span><div><strong>Wearable presence</strong><span>{status?.evidence?.presence ?? "Waiting"}</span></div></div><div><span className="check-icon">✓</span><div><strong>Wearer continuity</strong><span>{status?.evidence?.drift === "DRIFTING" ? "Needs attention" : status?.evidence?.drift === "NOMINAL" ? "Consistent" : "Not evaluated"}</span></div></div><div><span className="check-icon">✓</span><div><strong>Evidence freshness</strong><span>{status?.evidence ? `${(status.evidence.latest_age_ms / 1000).toFixed(1)} seconds old` : "Waiting for evidence"}</span></div></div><div><span className="check-icon">{decision?.decision === "APPROVED" ? "✓" : "·"}</span><div><strong>Passkey approval</strong><span>{decision?.decision === "APPROVED" ? "Approved" : "Not approved yet"}</span></div></div></div>{error && <p className="inline-error" role="alert">{error}</p>}<div className="form-actions"><button className="bank-button" onClick={() => void approve()} disabled={!canApprove || busy !== null || decision?.decision === "APPROVED"}>{busy === "approve" ? "Waiting for Touch ID…" : decision?.decision === "APPROVED" ? "Transfer approved" : "Approve with passkey"}</button>{blocker && <span className="disabled-reason">{blocker}</span>}</div><div className="authorization-expiry">Authorization expires in {created ? secondsUntil(created.action.exp, now) : "—"} seconds</div><button className="details-toggle" onClick={() => setDetailsOpen((v) => !v)} aria-expanded={detailsOpen}>{detailsOpen ? "Hide" : "Show"} technical details</button>{detailsOpen && <dl className="technical-details"><div><dt>Action digest</dt><dd>{created?.action_digest}</dd></div><div><dt>Assurance</dt><dd>{decision && "assurance" in decision ? decision.assurance : "—"}</dd></div><div><dt>Policy</dt><dd>Exact action · replay protected</dd></div></dl>}{assertion && <div className="form-actions"><button className="bank-button" onClick={() => void execute()} disabled={busy !== null}>{busy === "execute" ? "Executing transfer…" : "Execute transfer"}</button><span className="secure-note">The service checks presence again immediately before execution.</span></div>}</div>}
+            {stage === "authorize" && <div className="flow-panel"><div className="authorization-heading"><div><p className="section-kicker">Araxia authorization</p><h2>Confirm it&apos;s really you</h2></div><StateBadge value={decision?.decision === "APPROVED" ? "APPROVED" : "SECURE CHECK"} tone={decision?.decision === "APPROVED" ? "ok" : "neutral"} /></div><p className="muted">Your passkey approves the exact transfer below. Wearable presence must still be current when the transfer executes.</p><div className="locked-transfer"><span className="lock-icon" aria-hidden="true">⌑</span><div><strong>{money(amount)} to {recipientName}</strong><span>{description || "No description"}</span></div><span className="locked-word">LOCKED</span></div><div className="auth-checks"><div><span className="check-icon">{presenceOk ? "✓" : "·"}</span><div><strong>Wearable presence</strong><span>{status?.evidence?.presence ?? "Waiting"}</span></div></div><div><span className="check-icon">{continuityOk ? "✓" : "!"}</span><div><strong>Wearer continuity</strong><span>{halted ? "Wearer changed" : status?.evidence?.drift === "DRIFTING" ? "Needs attention" : status?.evidence?.drift === "NOMINAL" ? "Consistent" : "Not evaluated"}</span></div></div><div><span className="check-icon">{freshOk ? "✓" : "·"}</span><div><strong>Evidence freshness</strong><span>{status?.evidence ? `${(status.evidence.latest_age_ms / 1000).toFixed(1)} seconds old` : "Waiting for evidence"}</span></div></div><div><span className="check-icon">{decision?.decision === "APPROVED" ? "✓" : "·"}</span><div><strong>Passkey approval</strong><span>{decision?.decision === "APPROVED" ? "Approved" : "Not approved yet"}</span></div></div></div>{error && <p className="inline-error" role="alert">{error}</p>}<div className="form-actions"><button className="bank-button" onClick={() => void approve()} disabled={!canApprove || busy !== null || decision?.decision === "APPROVED"}>{busy === "approve" ? "Waiting for Touch ID…" : decision?.decision === "APPROVED" ? "Transfer approved" : "Approve with passkey"}</button>{blocker && !assertion && <span className="disabled-reason">{blocker}</span>}{!assertion && <button className="text-button" onClick={reset} disabled={busy !== null}>Start over</button>}</div><div className="authorization-expiry">{actionExpired ? "This authorization has expired." : `Authorization expires in ${created ? secondsUntil(created.action.exp, now) : "—"} seconds`}</div><button className="details-toggle" onClick={() => setDetailsOpen((v) => !v)} aria-expanded={detailsOpen}>{detailsOpen ? "Hide" : "Show"} technical details</button>{detailsOpen && <dl className="technical-details"><div><dt>Action digest</dt><dd>{created?.action_digest}</dd></div><div><dt>Assurance</dt><dd>{decision && "assurance" in decision ? decision.assurance : "—"}</dd></div><div><dt>Policy</dt><dd>Exact action · replay protected</dd></div></dl>}{assertion && <div className="form-actions"><button className="bank-button" onClick={() => void execute()} disabled={busy !== null}>{busy === "execute" ? "Executing transfer…" : "Execute transfer"}</button><span className="secure-note">The service checks presence again immediately before execution.</span></div>}</div>}
 
             {stage === "receipt" && <div className="flow-panel receipt-panel"><div className={receiptStatus === "CONFIRMED" ? "receipt-icon confirmed" : "receipt-icon"} aria-hidden="true">{receiptStatus === "CONFIRMED" ? "✓" : "!"}</div><p className="section-kicker">{receiptStatus === "CONFIRMED" ? "Transfer complete" : receiptStatus === "UNCERTAIN" ? "Transfer status uncertain" : "Transfer not completed"}</p><h2>{receiptStatus === "CONFIRMED" ? "Your transfer is on its way" : receiptStatus === "UNCERTAIN" ? "Check the ledger before retrying" : "We couldn&apos;t complete that transfer"}</h2><p className="muted">{receiptMessage}</p><dl className="receipt-details"><div><dt>Amount</dt><dd>{created ? dollars(created.action.amount_minor, created.action.ccy) : money(amount)}</dd></div><div><dt>Recipient</dt><dd>{recipientName}</dd></div><div><dt>Date and time</dt><dd>{new Date().toLocaleString()}</dd></div>{result && result.outcome === "EXECUTED" && result.providerRef && <div><dt>Transfer reference</dt><dd>{result.providerRef}</dd></div>}</dl><div className="form-actions"><a className="bank-button button-link" href={inspectHref}>Inspect authorization</a><button className="text-button" onClick={reset}>Make another transfer</button></div></div>}
           </section>
 
-          <aside className="side-column"><section className="status-card"><div className="status-card-top"><span className={`status-dot ${readiness.tone}`} /><span className="section-kicker">Araxia status</span></div><h2>{readiness.title}</h2><p>{readiness.detail}</p><div className="status-line"><span>Wearable stream</span><StateBadge value={status?.evidence?.presence ?? "WAITING"} tone={status?.evidence ? toneFor(status.evidence.presence) : "off"} /></div><div className="status-line"><span>Passkey</span><span className="status-value">{passkeys.length ? "Registered" : "Not registered"}</span></div><div className="status-line"><span>Settlement rail</span><span className="status-value">{status?.rails?.nessie ? "Available" : "Unavailable"}</span></div>{!status?.rails?.nessie && <p className="executor-note">Settlement rail is unavailable until the server can reach Nessie.</p>}<a href={inspectHref} className="side-link">View security details <span aria-hidden="true">→</span></a></section><section className="activity-card"><div className="activity-heading"><h2>Recent activity</h2><a href={inspectHref}>See all</a></div>{status?.executions.length ? status.executions.slice(0, 3).map((item) => <div className="activity-row" key={item.id}><span className="activity-icon">↗</span><div><strong>{dollars(item.action.amount_minor, item.action.ccy)} to {item.action.dst === "demo_rent" ? "RENT" : "recipient"}</strong><small>{new Date(item.started_at).toLocaleDateString()} · {item.status.toLowerCase()}</small></div></div>) : <p className="empty-activity">No transfers yet. Your completed transfers will appear here.</p>}</section><div className="disclaimer"><strong>Demo account</strong><p>Small One is a fictional bank. Transfers settle on Capital One Nessie. No real money is moved.</p></div></aside>
+          <aside className="side-column"><section className="status-card"><div className="status-card-top"><span className={`status-dot ${readiness.tone}`} /><span className="section-kicker">Araxia status</span></div><h2>{readiness.title}</h2><p>{readiness.detail}</p><div className="status-line"><span>Wearable stream</span><StateBadge value={status?.evidence?.presence ?? "WAITING"} tone={status?.evidence ? toneFor(status.evidence.presence) : "off"} /></div><div className="status-line"><span>Passkey</span><span className="status-value">{passkeys.length ? "Registered" : "Not registered"}</span></div><div className="status-line"><span>Settlement rail</span><span className="status-value">{status?.rails?.nessie ? "Available" : "Unavailable"}</span></div>{!status?.rails?.nessie && <p className="executor-note">Settlement rail is unavailable until the server can reach Nessie.</p>}<a href={inspectHref} className="side-link">View security details <span aria-hidden="true">→</span></a></section><section className="activity-card"><div className="activity-heading"><h2>Recent activity</h2><a href={inspectHref}>See all</a></div>{status?.executions.length ? status.executions.slice(0, 3).map((item) => <div className="activity-row" key={item.id}><span className="activity-icon">↗</span><div><strong>{dollars(item.action.amount_minor, item.action.ccy)} to {recipientLabel(item.action.dst)}</strong><small>{new Date(item.started_at).toLocaleDateString()} · {item.status.toLowerCase()}</small></div></div>) : <p className="empty-activity">No transfers yet. Your completed transfers will appear here.</p>}</section><div className="disclaimer"><strong>Demo account</strong><p>Small One is a fictional bank. Transfers settle on Capital One Nessie. No real money is moved.</p></div></aside>
         </div>
       </main>
     </div>
