@@ -1,8 +1,38 @@
-# araxia — Fitbit Air BLE capture
+# Araxia
 
-Intercept / inspect Bluetooth Low Energy traffic from **your** Google Fitbit Air.
+A presence-conditioned, action-bound authorization protocol. A passkey approves
+an exact action; a Fitbit Air stream must still be `READY` when the agent
+executes. The bank never sees a heartbeat.
 
 Repo: https://github.com/kushwahaamar-dev/araxia
+
+Claims we make, and the ones we do not: [`docs/CLAIMS.md`](docs/CLAIMS.md).
+Hardware facts: [`capture/hardware_gate.md`](capture/hardware_gate.md).
+
+## Demo (localhost)
+
+```bash
+# 1. Python bridge
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+# Google Health → Connections → Fitbit Air → Share heart rate ON (Always visible).
+# First connection only: tap Get started while the Mac is connected.
+python -m bridge.main run --address <BLE-UUID> --user u_amar --register
+
+# 2. Service (other terminal)
+cd web
+cp .env.example .env.local   # fill NESSIE_API_KEY and account ids
+npm install
+npm run dev                  # http://localhost:3000
+```
+
+Register a passkey in the console, create `$45 to RENT`, Approve with Touch ID,
+Execute. Attack lab: mutate amount, replay, take the band off and wait 30 s.
+
+```bash
+# Independent verifier (after you download assertion.json from the console)
+npx araxia-verify assertion assertion.json --issuer <issuer public hex>
+```
 
 ```bash
 git clone --recurse-submodules https://github.com/kushwahaamar-dev/araxia.git
@@ -12,6 +42,10 @@ git clone --recurse-submodules https://github.com/kushwahaamar-dev/araxia.git
 
 | Path | What |
 |---|---|
+| `bridge/` | BLE collector, presence, wearer model, signed envelopes |
+| `packages/verify/` | Independent assertion/envelope verifier + `araxia-verify` CLI |
+| `web/` | Next.js service, passkeys, policy, Nessie executor, console |
+| `docs/CLAIMS.md` | What we claim and what we do not |
 | `scripts/scan_ble.py` | Scan nearby BLE; flag Fitbit-like ads |
 | `scripts/dump_gatt.py` | Connect + dump GATT tree → `dump.txt` |
 | `scripts/sniff_notify.py` | Subscribe to notify/indicate and log payloads |

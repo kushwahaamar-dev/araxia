@@ -22,3 +22,4 @@ bugreport*/
 .ruff_cache/
 node_modules/
 .next/
+web/data/

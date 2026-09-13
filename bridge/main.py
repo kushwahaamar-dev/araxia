@@ -121,6 +121,12 @@ async def run(args: argparse.Namespace) -> int:
     session_id = "s_" + secrets.token_hex(6)
     device_id = "REPLAY" if args.replay else "d_" + hashlib.sha256(args.address.encode()).hexdigest()[:12]
     print(f"bridge: kid={signer.kid} pubkey={signer.public_key_hex} session={session_id}", flush=True)
+    if args.register and not args.dry_run:
+        body = json.dumps(
+            {"user_id": args.user, "bridge_id": signer.kid, "pubkey_hex": signer.public_key_hex}
+        )
+        status = await asyncio.to_thread(post_envelope, args.service + "/api/bridges", body)
+        print(f"bridge: registered with service -> {status}", flush=True)
 
     source = replay_samples(Path(args.replay), args.speed) if args.replay else ble_samples(args.address, 15.0)
     window: list[tuple[float, int]] = []
@@ -236,6 +242,7 @@ def main() -> int:
     p_run.add_argument("--replay", default="", help="JSONL capture to replay instead of the band")
     p_run.add_argument("--speed", type=float, default=1.0)
     p_run.add_argument("--dry-run", action="store_true", help="print envelopes, do not POST")
+    p_run.add_argument("--register", action="store_true", help="register this bridge key with the service")
 
     p_enroll = sub.add_parser("enroll")
     p_enroll.add_argument("--address", required=True)
