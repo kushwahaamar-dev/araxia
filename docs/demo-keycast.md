@@ -53,7 +53,7 @@ You **cannot** claim as true:
 
 ### 0:25 — Fitbit Air `[hold up band · ~12–15 s · point at READY]`
 
-**Google Fitbit Air. We poked at the Bluetooth ourselves — it just bleeds out a heart-rate number once a second. No beat-to-beat stuff, no "on wrist" flag, no temp. Take it off and it freezes on the last number forever, so we mark STALE in about eight seconds. Raw BPM never leaves this laptop.**
+**Google Fitbit Air. Bluetooth just bleeds a heart-rate number once a second — no beat timing, no on-wrist flag, no temp. Take it off and it freezes forever, so we hit STALE in about eight seconds. Raw BPM stays on this laptop.**
 
 ### 0:40 — Talk to the agent `[/ → ./gemini  OR  narrate then cut to /bank]`
 
@@ -198,7 +198,7 @@ Use when judges linger. Same hard rails.
 
 ## Fitbit Air — ~15 s (say it like a person)
 
-**Google Fitbit Air. We poked at the Bluetooth ourselves — it just bleeds out a heart-rate number once a second. No beat-to-beat stuff, no "on wrist" flag, no temp. Take it off and it freezes on the last number forever, so we mark STALE in about eight seconds. Raw BPM never leaves this laptop.**
+**Google Fitbit Air. Bluetooth just bleeds a heart-rate number once a second — no beat timing, no on-wrist flag, no temp. Take it off and it freezes forever, so we hit STALE in about eight seconds. Raw BPM stays on this laptop.**
 
 ---
 
