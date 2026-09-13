@@ -51,9 +51,62 @@ works on real rails. Pitch the layer; demo the product on top.
 24. `zod`
 25. `vitest`
 
-**Do not tag:** MathWorks, Presage, ElevenLabs, Backboard, Notability (process prize — screenshots, not a build tag unless Devpost lists it).
+**Hackathon form answers (paste-ready)**
 
-If a label isn’t in Devpost’s autocomplete, type the closest match (`nesSIE` / `Capital One`, `Google Gemini`, `Tiger Data`, `WebAuthn` / `Passkeys`).
+### Universities / schools
+```
+Texas Tech University
+```
+*(Add another line per school if someone is elsewhere.)*
+
+### GoDaddy domains registered this hackathon
+```
+araxia.fit
+```
+
+### Tech feedback (pick a few; each should name the tech)
+
+**Gemini** — Strong fit for constrained proposals: JSON schema + low temperature kept output in shape. We still revalidate every field server-side; the model proposes, it never decides. Latency was fine for a demo propose step.
+
+**Capital One Nessie** — Easy to wire transfers, but the current `TransferCreate` schema has no payee field and seeded balances do not move. Great for proving a rail exists; say that honestly on screen.
+
+**Persona** — Hosted inquiry sandbox made “no passkey until verified” real. Sandbox “Pass verification” and browser/camera quirks (e.g. Brave popups) are the main friction.
+
+**Solana (devnet) + Solscan** — Same Araxia assertion, second rail; memo with nonce and explorer links made the claim checkable. Devnet airdrop / keypair setup is the only ops tax.
+
+**Tiger Data (Timescale)** — Useful audit replica (users, evidence, executions). SQLite still owns claim-once; keep that split clear.
+
+**Fitbit Air / Google Health + BLE (`bleak`)** — Share-HR gate and off-wrist freeze shaped the whole presence design. macOS CoreBluetooth cannot bond from code; one-time confirm in the app is required.
+
+**WebAuthn / passkeys** — Binding the challenge to the action digest is the right shape for agentic money. Touch ID UX is demo-friendly.
+
+**GitHub** — Fine for monorepo + docs; keep secrets out of the tree (`.env.local` only).
+
+**Vultr / Docker** — Dockerfile builds the service for evidence; live demo stays on localhost because of SQLite/`better-sqlite3` + BLE.
+
+### Which AI tools did you use this weekend?
+Select: **Gemini** only (among the listed GenAI tools).
+
+Do **not** select OpenAI, Anthropic, Hugging Face, Llama, IBM Watson, Gemma, DeepSeek, OpenRouter, ElevenLabs, DigitalOcean Gradient, or Vultr-as-GenAI unless you actually used them. Vultr is infra, not GenAI.
+
+### Did you implement a generative AI model or API?
+**Not** “Capital One Nessie” — that is a banking sandbox API, not GenAI.
+
+Paste this:
+
+```
+Yes. We call the Google Gemini API (gemini-2.5-flash) from Araxia’s /api/propose path. A user types a natural-language payment request; Gemini returns a structured JSON proposal (op, payee, amount_minor, currency, reason, explanation) under a response schema. The server then revalidates every field against its own payee allowlist and limits before any canonical action or passkey challenge exists—so the model can propose but cannot authorize or add a payee. We used it to show agentic intent under a presence-conditioned, action-bound protocol rather than letting an LLM hold session authority.
+```
+
+### Gemini Project Number (Best Use of Gemini)
+We only have `GEMINI_API_KEY` / `GEMINI_MODEL` locally — **not** the Cloud project number. Fetch it:
+
+1. Open [Google AI Studio](https://aistudio.google.com/)
+2. **Get API key**
+3. Click the **Project Number** linked to the key you used for this hack
+4. Paste that number into Devpost
+
+Do not invent a number. If the key was created under a personal AI Studio project, the project number is still on that key’s detail page.
 
 **Links**
 
